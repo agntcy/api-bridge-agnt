@@ -1,5 +1,5 @@
 ---
-name: stale
+name: 📆 Mark stale issues
 
 on:
   schedule:
