@@ -1,0 +1,108 @@
+{
+    "x-tyk-api-gateway": {
+      "info": {
+        "id": "tyk-httpbin-selection-id",
+        "name": "ThisIshttpbinSelect",
+        "state": {
+          "active": true
+        }
+      },
+      "upstream": {
+        "url": "http://httpbin.org/"
+      },
+      "server": {
+        "listenPath": {
+          "value": "/httpbin_select",
+          "strip": true
+        }
+      },
+      "middleware": {
+        "global": {
+            "pluginConfig": {
+                "data": {
+                    "enabled": true,
+                    "value": {
+                        "azureConfig": {
+                            "openAIEndpoint": "https://YOUR-ENDPOINT.openai.azure.com"
+                        },
+                        "selectOperations": {
+                            "getApiSelect": {
+                                "x-nl-input-examples": [
+                                    "which api should I invoke to get an XML response?"
+                                ]
+                            }
+                        },
+                        "selectModelsPath": "./models"
+                    }
+                },
+                "driver": "goplugin"
+            },
+            "postPlugins": [
+                {
+                  "enabled": true,
+                  "functionName": "SelectAndRewrite",
+                  "path": "middleware/agent-bridge-plugin.so"
+                },
+                {
+                    "enabled": true,
+                    "functionName": "QueryEndpointSelection",
+                    "path": "middleware/agent-bridge-plugin.so"
+                }
+            ]
+        }
+    }
+    },
+    "openapi": "3.0.1",
+    "info": {
+      "title": "httpbin.org",
+      "description": "A simple HTTP Request & Response Service.<br/> <br/> <b>Run locally: </b> <code>$ docker run -p 80:80 kennethreitz/httpbin</code>",
+      "contact": {
+        "url": "https://kennethreitz.org",
+        "email": "me@kennethreitz.org"
+      },
+      "version": "0.9.2"
+    },
+    "servers": [
+      {
+        "url": "https://httpbin.org/"
+      }
+    ],
+    "paths": {
+        "/api-select": {
+          "get": {
+            "operationId": "getApiSelect",
+            "summary": "Choose API endpoint based on natural language input.",
+            "parameters": [
+              {
+                "name": "reply",
+                "in": "query",
+                "schema": {
+                    "type": "string",
+                    "enum": ["redirect", "reply", "invoke"],
+                    "default": "reply"
+                }
+              },
+              {
+                "name": "query",
+                "in": "query",
+                "required": true,
+                "schema": {
+                    "type": "string"
+                }
+              }
+            ],
+            "responses": {
+                "200": {
+                    "description": "API successfully invoked or reply data depending on \"reply\" parameter.",
+                    "content": {}
+                },
+                "302": {
+                    "description": "Redirection to upstream API.",
+                    "content": {}
+                }
+            }
+          }
+        }
+    },
+    "components": {}
+}
