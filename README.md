@@ -1,9 +1,13 @@
 # API Bridge Agnt
 
+- [Documentation](https://agntcy.github.io/api-bridge-agnt)
+
 ## About The Project
 
-The API Bridge Agnt project provides a [Tyk](https://tyk.io/) middleware plugin that allows users to interact with traditional REST APIs
-using natural language. It acts as a translator between human language and structured API requests/responses.
+The API Bridge Agnt project provides a [Tyk](https://tyk.io/) middleware plugin
+that allows users to interact with traditional REST APIs using natural language.
+It acts as a translator between human language and structured API
+requests/responses.
 
 Key features:
 - Converts natural language queries into valid API requests based on OpenAPI specifications
@@ -18,11 +22,31 @@ the underlying API implementations.
 
 ## Getting Started
 
-### Prerequisites
+Build the plugin and start Tyk Gateway:
+```bash
+export OPENAI_API_KEY=REPLACE_WITH_YOUR_KEY
+export OPENAI_MODEL=gpt-4o-mini
 
-### Installation
+make start_tyk   # This will automatically build Tyk and the plugin, then install the plugin and start Tyk gateway
+```
 
-## Usage
+Add an example API (httpbin.org) to Tyk:
+```bash
+curl http://localhost:8080/tyk/apis/oas \
+  --header "x-tyk-authorization: foo" \
+  --header 'Content-Type: text/plain' \
+  -d@configs/api.github.com.gist.deref.oas.json
+
+curl http://localhost:8080/tyk/reload/group \
+  --header "x-tyk-authorization: foo"
+```
+
+Test the plugin with a natural language query:
+```bash
+curl 'http://localhost:8080/github/' \
+  --header 'Content-Type: application/nlq' \
+  -d 'List the first issue for the repository named tyk owned by TykTechnologies with the label bug'
+```
 
 ## Contributing
 
@@ -33,7 +57,7 @@ appreciated**. For detailed contributing guidelines, please see
 
 ## Copyright Notice
 
-[Copyright Notice and License](./LICENSE.md)
+[Copyright Notice and License](LICENSE.md)
 
 Copyright (c) 2025 Cisco and/or its affiliates.
 
