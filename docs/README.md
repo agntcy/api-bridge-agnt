@@ -64,29 +64,46 @@ make install_plugin
 
 ### Tyk configuration
 
-In the Tyk Gateway configuration file (`tyk.conf`), add the plugin to the
-`postPlugins` and `responsePlugins` sections:
+This plugins relies on [Tyk OAS API Definition](https://tyk.io/docs/api-management/gateway-config-tyk-oas/).
+To use it, you need to add the plugin to the `postPlugins` and `responsePlugins`
+sections of the `x-tyk-api-gateway` section:
 
 ```json
-"postPlugins": [
-  {
-    "enabled": true,
-    "functionName": "SelectAndRewrite",
-    "path": "middleware/agent-bridge-plugin.so"
-  },
-  {
-    "enabled": true,
-    "functionName": "RewriteQueryToOas",
-    "path": "middleware/agent-bridge-plugin.so"
+"x-tyk-api-gateway": {
+[...]
+  "middleware": {
+    "global": {
+      "pluginConfig": {
+        "data": {
+          "enabled": true,
+          "value": {
+          }
+        },
+        "driver": "goplugin"
+      },
+      "postPlugins": [
+        {
+          "enabled": true,
+          "functionName": "SelectAndRewrite",
+          "path": "middleware/agent-bridge-plugin.so"
+        },
+        {
+          "enabled": true,
+          "functionName": "RewriteQueryToOas",
+          "path": "middleware/agent-bridge-plugin.so"
+        }
+      ],
+      "responsePlugins": [
+        {
+          "enabled": true,
+          "functionName": "RewriteResponseToNl",
+          "path": "middleware/agent-bridge-plugin.so"
+        }
+      ]
+[...]
+    }
   }
-],
-"responsePlugins": [
-  {
-    "enabled": true,
-    "functionName": "RewriteResponseToNl",
-    "path": "middleware/agent-bridge-plugin.so"
-  }
-]
+}
 ```
 
 ### Select and rewrite middleware
