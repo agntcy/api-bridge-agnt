@@ -30,7 +30,7 @@ export OPENAI_MODEL=gpt-4o-mini
 make start_tyk   # This will automatically build Tyk and the plugin, then install the plugin and start Tyk gateway
 ```
 
-Add an example API (httpbin.org) to Tyk:
+Add an example API (github.com) to Tyk:
 ```bash
 curl http://localhost:8080/tyk/apis/oas \
   --header "x-tyk-authorization: foo" \
