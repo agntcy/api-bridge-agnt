@@ -230,7 +230,7 @@ func QueryEndpointSelection(rw http.ResponseWriter, r *http.Request) {
 
 	rw.Header().Set("Content-Type", "application/json")
 	rw.WriteHeader(http.StatusOK)
-	rw.Write(jsonData)
+	_, _ = rw.Write(jsonData)
 }
 
 func init() {

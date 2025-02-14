@@ -68,6 +68,7 @@ func getRoute(req *http.Request) (*routers.Route, map[string]string, error) {
 	oasDef := ctx.GetOASDefinition(req)
 	if oasDef == nil {
 		logger.Fatalf("[+] No OAS definition found in the request")
+		return nil, nil, errors.New("no OAS definition found in the request")
 	}
 
 	// In order to find the route we need to strip the listenPath from the URL
