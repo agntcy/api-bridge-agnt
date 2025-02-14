@@ -45,7 +45,7 @@ clean:
 	rm -f go/src/$(PLUGIN_NAME)_*.so
 
 setup tyk-release-$(TYK_VERSION)/go.mod:
-	git clone --branch $(TYK_VERSION) https://github.com/TykTechnologies/tyk.git tyk-release-$(TYK_VERSION) || true
+	git clone --branch $(TYK_VERSION) --depth 1 https://github.com/TykTechnologies/tyk.git tyk-release-$(TYK_VERSION) || true
 	cd tyk-release-$(TYK_VERSION) && sed -i.bak 's/.*Version = ".*"/       Version = "$(TYK_VERSION)-dev"/g' internal/build/version.go
 
 	# set the go version of the plugin to the one used by tyk
@@ -58,7 +58,7 @@ setup tyk-release-$(TYK_VERSION)/go.mod:
 
 search-release-$(SEARCH_VERSION)/README.md:
 	@git lfs status || { echo "Error: you must install git-lfs from https://git-lfs.com/ and then enable it: git lfs install [--local]" ; false ; }
-	git clone --branch $(SEARCH_VERSION) https://github.com/kelindar/search.git search-release-$(SEARCH_VERSION) || true
+	git clone --branch $(SEARCH_VERSION) --depth 1 https://github.com/kelindar/search.git search-release-$(SEARCH_VERSION) || true
 	cd "search-release-$(SEARCH_VERSION)" && git lfs install --local
 	cd "search-release-$(SEARCH_VERSION)" && git submodule update --init --recursive
 	cd "search-release-$(SEARCH_VERSION)" && git lfs pull

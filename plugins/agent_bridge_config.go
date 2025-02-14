@@ -99,9 +99,14 @@ func parseConfigData(apiId string, configData map[string]interface{}) (*PluginDa
 	for key, value := range defaultAzureConfig {
 		azureConfig.SetDefault(key, value)
 	}
-	azureConfig.BindEnv("openAIEndpoint", "OPENAI_ENDPOINT")
-	azureConfig.BindEnv("openAIKey", "OPENAI_API_KEY")
-	azureConfig.BindEnv("modelDeployment", "OPENAI_MODEL")
+	err1 := azureConfig.BindEnv("openAIEndpoint", "OPENAI_ENDPOINT")
+	err2 := azureConfig.BindEnv("openAIKey", "OPENAI_API_KEY")
+	err3 := azureConfig.BindEnv("modelDeployment", "OPENAI_MODEL")
+	if err1 != nil || err2 != nil || err3 != nil {
+		err := fmt.Errorf("failed to get subconfig AzureConfig")
+		logger.Errorf("[+] Error reading configuration for AzureConfig: %s", err)
+		return nil, err
+	}
 
 	selectOperations := map[string]*AIExtensionConfig{}
 	for apiId, aiExtension := range confViper.GetStringMap("selectOperations") {
