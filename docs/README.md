@@ -197,11 +197,11 @@ curl http://localhost:8080/sendgrid/v3/mail/send \
 Contributions are what make the open source community such an amazing place to
 learn, inspire, and create. Any contributions you make are **greatly
 appreciated**. For detailed contributing guidelines, please see
-[CONTRIBUTING.md](CONTRIBUTING.md)
+[CONTRIBUTING.md](./CONTRIBUTING.md)
 
 ## Copyright Notice
 
-[Copyright Notice and License](./LICENSE.md)
+[Copyright Notice and License](https://github.com/agntcy/api-bridge-agnt/blob/main/LICENSE)
 
 Copyright (c) 2025 Cisco and/or its affiliates.
 
