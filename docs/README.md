@@ -27,42 +27,70 @@ the underlying API implementations.
 - Git
 - jq
 
+Tyk required also a redis database. You can deploy it with:
+```bash
+make start_redis
+```
+
 ### Local development
 
-Environment variables (OpenAI):
+Built with:
+- [search](https://github.com/kelindar/search) for the semantic router
+- [Tyk](https://github.com/TykTechnologies/tyk.git) for the gateway
+We use these dependencies inside the project. However, you don't need to download it or to build it, 
+everything is managed by the Makefile.
 
-```
+#### Step 1 - Set environment variables
+
+For OpenAI:
+
+```bash
 export OPENAI_API_KEY=REPLACE_WITH_YOUR_KEY
 export OPENAI_MODEL=gpt-4o-mini
 ```
 
-Environment variables (Azure OpenAI):
+For Azure OpenAI:
 
-```
+```bash
 export OPENAI_API_KEY=REPLACE_WITH_YOUR_KEY
 export OPENAI_ENDPOINT=https://REPLACE_WITH_YOUR_ENDPOINT.openai.azure.com
 export OPENAI_MODEL=gpt-4o-mini
 ```
 
-Dependencies are managed so that you can also just run: `make start_tyk` and the
-plugin will be built and installed first.
+#### Step 2 - Build the plugin and start tyk locally on [Tyk](http://localhost:8080)
 
-Quick start:
+Dependencies are managed so that you can just run: 
 ```bash
-make start_tyk   # This will automatically build Tyk and the plugin, then install the plugin and start Tyk gateway
-make load_plugin # This will configure Tyk with an example API (httpbin.org) and reload the gateway
+make start_tyk 
+```
+This will automatically build "Tyk", "search" and the plugin, then install the plugin and start Tyk gateway
+
+#### Step 3 - Load and configure Tyk with an example API (httpbin.org)
+
+```bash
+make load_plugin
 ```
 
-Individual steps if needed:
+### Other installation
+
+#### Linux
+
+for linux (ubuntu) you can use:
 ```bash
-make build_tyk
-make build_plugin
-make install_plugin
+TARGET_OS=linux TARGET_ARCH=amd64 SEARCH_LIB=libllama_go.so make start_tyk
 ```
 
-## Usage
+#### Individual steps for building if needed:
 
-### Tyk configuration
+If you need to decompose each task individually, you can split into  
+```bash
+make build_tyk          # build tyk
+make build_search_lib   # build the "search" library, used as semantic router
+make build_plugin       # build the plugin
+make install_plugin     # Install the plugin
+```
+
+## Tyk configuration
 
 This plugins relies on [Tyk OAS API Definition](https://tyk.io/docs/api-management/gateway-config-tyk-oas/).
 To use it, you need to add the plugin to the `postPlugins` and `responsePlugins`
@@ -128,6 +156,7 @@ converting the natural language query into a valid API request based on the
 selected OpenAPI endpoint.
 
 !> Here you MUST provide the full path of the target API in the request URL.
+!> Rewriting the query will be available only if the content type is not set or is text/plain
 
 Two headers are available for this request:
 
@@ -154,6 +183,7 @@ It can be used standalone or in combination with the `RewriteQueryToOas` middlew
 
 1. Add OAS spec:
 
+Adding a spec named "httpbin.org.oas.json" located in ./configs folder
 ```bash
 curl http://localhost:8080/tyk/apis/oas \
   --header "x-tyk-authorization: foo" \
@@ -182,7 +212,123 @@ curl 'http://localhost:8080/github/' \
   -d 'List the first issue for the repository named tyk owned by TykTechnologies with the label bug'
 ```
 
-### Sendgrid example
+## Usage
+
+As a usage exemple, we will use the API Bridge Agnt to send email via SENGRID API.
+
+### Prequisites
+
+- Get an API Key for free from sendgrid [sengrid by twilio](https://sendgrid.com/en-us)
+- Retreive the open api spec here [tsg_mail_v3.json](https://github.com/twilio/sendgrid-oai/blob/main/spec/json/tsg_mail_v3.json)
+- Start the plugin as described on "Getting Started" section
+
+### Step 1 - Update the API with tyk middleware settings
+
+You need to add on the API the parameters allowing the plugin to use it.
+
+```json
+{
+  [...]
+  "x-tyk-api-gateway": {
+    "info": {
+      "id": "tyk-sendgrid-id",
+      "name": "Sendgrid Mail API",
+      "state": {
+        "active": true
+      }
+    },
+    "upstream": {
+      "url": "https://api.sendgrid.com"
+    },
+    "server": {
+      "listenPath": {
+        "value": "/sendgrid/",
+        "strip": true
+      }
+    },
+    "middleware": {
+      "global": {
+        "pluginConfig": {
+          "data": {
+            "enabled": true,
+            "value": {
+            }
+          },
+          "driver": "goplugin"
+        },
+        "postPlugins": [
+          {
+            "enabled": true,
+            "functionName": "SelectAndRewrite",
+            "path": "middleware/agent-bridge-plugin.so"
+          },
+          {
+            "enabled": true,
+            "functionName": "RewriteQueryToOas",
+            "path": "middleware/agent-bridge-plugin.so"
+          }
+        ],
+        "responsePlugins": [
+          {
+            "enabled": true,
+            "functionName": "RewriteResponseToNl",
+            "path": "middleware/agent-bridge-plugin.so"
+          }
+        ]
+      }
+    }
+  },
+  [...]
+```
+
+You have an example of a such configuration here ```./configs/api.sendgrid.com.oas.json```
+
+### Step 2 - Configure an endpoint to allow plugin to retrieve it
+
+On the same oas file, add a "x-nl-input-examples" element to an endpoint with 
+sentence that describe how you can use the endpoint with natural language.
+For example:
+
+```json
+{
+  [...]
+  "paths": {
+    [...]
+    "/v3/mail/send": {
+      [...]
+      "post": {
+        [...]
+        "x-nl-input-examples": [
+          "Send an message to 'test@example.com' including a joke. Please use emojis inside it.",
+          "Send an email to 'test@example.com' including a joke. Please use emojis inside it.",
+          "Tell to 'test@example.com' that his new car is available.",
+          "Write a profesional email to reject the candidate 'John Doe <test@example.com'"
+        ]
+      }
+    }
+  },
+  [...]
+```
+
+You have an example of a such configuration here ```./configs/api.sendgrid.com.oas.json```
+
+### Step 3 - Add the API to tyk configuration
+
+Your OAS API is ready to be integrated on the Tyk plugin:
+
+```bash
+curl http://localhost:8080/tyk/apis/oas \
+  --header "x-tyk-authorization: foo" \
+  --header 'Content-Type: text/plain' \
+  -d@configs/api.sendgrid.com.oas.json
+
+curl http://localhost:8080/tyk/reload/group \
+  --header "x-tyk-authorization: foo"
+```
+
+### Step 4 - Test it !
+
+Replace "agntcy@example.com" with a sender email you have configured on your sendgrid account.
 
 ```bash
 curl http://localhost:8080/sendgrid/v3/mail/send \
@@ -191,6 +337,29 @@ curl http://localhost:8080/sendgrid/v3/mail/send \
   -d 'Send a message from me (agntcy@example.com) to John Die <j.doe@example.com>. John is french, the message should be a joke using a lot of emojis, something fun about comparing France and Italy'
 ```
 
+As a result, the receiver must receive a mail like:
+```
+
+Subject: A Little Joke for You! 🇫🇷🇮🇹
+
+Hey John! 😄
+
+I hope you're having a fantastic day! I just wanted to share a little joke with you:
+
+Why did the French chef break up with the Italian chef? 🍽️❤️
+
+Because he couldn't handle all the pasta-bilities! 🍝😂
+
+But don't worry, they still have a "bready" good friendship! 🥖😜
+
+Just remember, whether it's croissants or cannoli, we can all agree that food brings us together! 🍷🍰
+
+Take care and keep smiling! 😊
+
+Best,
+agntcy
+
+```
 
 ## Contributing
 
