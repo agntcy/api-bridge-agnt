@@ -173,6 +173,10 @@ curl 'http://localhost:8080/gmail/gmail/v1/users/me/messages/send' \
   --data 'Send an email to "john.doe@example.com". Explain that we are accepting is offer for Agntcy'
 ```
 
+In this example "http://localhost:8080/gmail/gmail/v1/users/me/messages/send":
+- "/gmail/" is the listen path defined on the x-tyk-api-gateway part of the spec
+- "gmail/v1/users/me/messages/send" is the endpoint on the spec
+
 ### Rewrite response
 
 The third middleware function (`RewriteResponseToNl`) is responsible for
@@ -204,6 +208,10 @@ curl http://localhost:8080/httpbin/json \
   -d "Hello"
 ```
 
+In this example "http://localhost:8080/httpbin/json":
+- "/httpbin/" is the listen path defined on the x-tyk-api-gateway part of the spec
+- "json" is the endpoint on the spec
+
 ### Github example
 
 ```bash
@@ -214,12 +222,14 @@ curl 'http://localhost:8080/github/' \
 
 ## Usage
 
-As a usage exemple, we will use the API Bridge Agnt to send email via SENGRID API.
+As a usage example, we will use the API Bridge Agnt to send email via SENGRID API.
 
 ### Prequisites
 
 - Get an API Key for free from sendgrid [sengrid by twilio](https://sendgrid.com/en-us)
 - Retreive the open api spec here [tsg_mail_v3.json](https://github.com/twilio/sendgrid-oai/blob/main/spec/json/tsg_mail_v3.json)
+- make sure redis is running (otherwise, use ```make start_redis```)
+- make sure you export properly OPENAI parameters
 - Start the plugin as described on "Getting Started" section
 
 ### Step 1 - Update the API with tyk middleware settings
@@ -331,13 +341,13 @@ curl http://localhost:8080/tyk/reload/group \
 Replace "agntcy@example.com" with a sender email you have configured on your sendgrid account.
 
 ```bash
-curl http://localhost:8080/sendgrid/v3/mail/send \
+curl http://localhost:8080/sendgrid/ \
   --header "Authorization: Bearer $SENDGRID_API_KEY" \
   --header 'Content-Type: application/nlq' \
   -d 'Send a message from me (agntcy@example.com) to John Die <j.doe@example.com>. John is french, the message should be a joke using a lot of emojis, something fun about comparing France and Italy'
 ```
 
-As a result, the receiver must receive a mail like:
+As a result, the receiver (j.doe@example.com) must receive a mail like:
 ```
 
 Subject: A Little Joke for You! 🇫🇷🇮🇹
