@@ -14,7 +14,7 @@ import (
 func TestConfigParseConfigData(t *testing.T) {
 	var tests = []struct {
 		configData     interface{}
-		expectedResult string
+		expectedConfig PluginDataConfig
 	}{
 		{
 			map[string]interface{}{
@@ -23,11 +23,31 @@ func TestConfigParseConfigData(t *testing.T) {
 					"openAIKey":      "xxx",
 				},
 			},
-			"{\"azureConfig\":{\"openAIKey\":\"xxx\",\"openAIEndpoint\":\"https://tests-agents.openai.azure.com\",\"modelDeployment\":\"gpt-4o-mini\"},\"selectOperations\":{},\"selectModelEmbedding\":\"MiniLM-L6-v2.Q8_0.gguf\",\"selectModelsPath\":\"models\",\"llmConfig\":null,\"APIID\":\"httpbin\"}",
+			PluginDataConfig{
+				AzureConfig: AzureConfig{
+					OpenAIEndpoint:  "https://tests-agents.openai.azure.com",
+					OpenAIKey:       "xxx",
+					ModelDeployment: "gpt-4o-mini",
+				},
+				SelectOperations:     map[string]*AIExtensionConfig{},
+				SelectModelEmbedding: "MiniLM-L6-v2.Q8_0.gguf",
+				SelectModelsPath:     "models",
+				APIID:                "httpbin",
+			},
 		},
 		{
 			map[string]interface{}{},
-			"{\"azureConfig\":{\"openAIKey\":\"\",\"openAIEndpoint\":\"https://api.openai.com/v1\",\"modelDeployment\":\"gpt-4o-mini\"},\"selectOperations\":{},\"selectModelEmbedding\":\"MiniLM-L6-v2.Q8_0.gguf\",\"selectModelsPath\":\"models\",\"llmConfig\":null,\"APIID\":\"httpbin\"}",
+			PluginDataConfig{
+				AzureConfig: AzureConfig{
+					OpenAIEndpoint:  "https://api.openai.com/v1",
+					OpenAIKey:       "",
+					ModelDeployment: "gpt-4o-mini",
+				},
+				SelectOperations:     map[string]*AIExtensionConfig{},
+				SelectModelEmbedding: "MiniLM-L6-v2.Q8_0.gguf",
+				SelectModelsPath:     "models",
+				APIID:                "httpbin",
+			},
 		},
 	}
 
@@ -46,8 +66,11 @@ func TestConfigParseConfigData(t *testing.T) {
 		assert.Nil(t, err)
 		assert.NotNil(t, dataconfig)
 
+		expectedDataConfig, err := json.Marshal(test.expectedConfig)
+		assert.Nil(t, err)
+
 		jsonData, err := json.Marshal(dataconfig)
 		assert.Nil(t, err)
-		assert.Equal(t, test.expectedResult, string(jsonData), "Expected: %s, Got: %s", test.expectedResult, string(jsonData))
+		assert.Equal(t, string(expectedDataConfig), string(jsonData), "Expected: %s, Got: %s", string(expectedDataConfig), string(jsonData))
 	}
 }

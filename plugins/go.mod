@@ -8,7 +8,7 @@ require (
 	github.com/TykTechnologies/tyk v1.9.2-0.20250121101604-68a2deba26e9
 	github.com/getkin/kin-openapi v0.115.0
 	github.com/kelindar/search v0.3.0
-	github.com/spf13/viper v1.3.2
+	github.com/stretchr/testify v1.10.0
 )
 
 require (
@@ -34,7 +34,6 @@ require (
 	github.com/ebitengine/purego v0.8.1 // indirect
 	github.com/eclipse/paho.mqtt.golang v1.4.3 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
-	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
@@ -52,7 +51,6 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/go-version v1.7.0 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
-	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/huandu/xstrings v1.5.0 // indirect
 	github.com/imdario/mergo v0.3.13 // indirect
 	github.com/invopop/yaml v0.2.0 // indirect
@@ -65,7 +63,6 @@ require (
 	github.com/klauspost/cpuid/v2 v2.2.9 // indirect
 	github.com/lonelycode/go-uuid v0.0.0-20141202165402-ed3ca8a15a93 // indirect
 	github.com/lonelycode/osin v0.0.0-20160423095202-da239c9dacb6 // indirect
-	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
@@ -73,7 +70,6 @@ require (
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
 	github.com/onsi/gomega v1.35.0 // indirect
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
-	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/perimeterx/marshmallow v1.1.5 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
@@ -82,11 +78,6 @@ require (
 	github.com/redis/go-redis/v9 v9.7.0 // indirect
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.0 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
-	github.com/spf13/afero v1.11.0 // indirect
-	github.com/spf13/cast v1.7.0 // indirect
-	github.com/spf13/jwalterweatherman v1.0.0 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/stretchr/testify v1.10.0 // indirect
 	github.com/tidwall/gjson v1.11.0 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
