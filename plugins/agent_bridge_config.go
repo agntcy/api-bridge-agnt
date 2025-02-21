@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"path/filepath"
 	"sync"
 
@@ -14,7 +15,6 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/kelindar/search"
-	"github.com/spf13/viper"
 )
 
 const (
@@ -73,63 +73,36 @@ func getApiId(r *http.Request) (string, error) {
 	return gateway.Info.ID, nil
 }
 
+func getConfigValue(defaultValue string, configData map[string]interface{}, configMapKey string, envValue string) string {
+	ret := defaultValue
+	v, exists := configData[configMapKey]
+	if exists {
+		ret = v.(string)
+	}
+	if envValue != "" && os.Getenv(envValue) != "" {
+		ret = os.Getenv(envValue)
+	}
+
+	return ret
+}
+
 func parseConfigData(apiId string, configData map[string]interface{}) (*PluginDataConfig, error) {
 	logger.Debugf("[+] Parsing config for api id: %s", apiId)
-	defaultAzureConfig := map[string]string{"openAIEndpoint": DEFAULT_OPENAI_ENDPOINT, "modelDeployment": DEFAULT_OPENAI_MODEL}
 
-	confViper := viper.New()
-	confViper.SetDefault("selectOperations", map[string]*AIExtensionConfig{})
-	confViper.SetDefault("selectModelEmbedding", DEFAULT_MODEL_EMBEDDINGS_MODEL)
-	confViper.SetDefault("selectModelsPath", DEFAULT_MODEL_EMBEDDINGS_PATH)
-	confViper.SetDefault("azureConfig", defaultAzureConfig)
-
-	if len(configData) > 0 {
-		if err := confViper.MergeConfigMap(configData); err != nil {
-			return nil, err
-		}
-	}
-
-	azureConfig := confViper.Sub("azureConfig")
-	if azureConfig == nil {
-		err := fmt.Errorf("failed to get subconfig AzureConfig")
-		logger.Errorf("[+] Error reading configuration for AzureConfig: %s", err)
-		return nil, err
-	}
-	// Propagate defaults. Viper doesn't seem to do this. :(
-	for key, value := range defaultAzureConfig {
-		azureConfig.SetDefault(key, value)
-	}
-	err1 := azureConfig.BindEnv("openAIEndpoint", "OPENAI_ENDPOINT")
-	err2 := azureConfig.BindEnv("openAIKey", "OPENAI_API_KEY")
-	err3 := azureConfig.BindEnv("modelDeployment", "OPENAI_MODEL")
-	if err1 != nil || err2 != nil || err3 != nil {
-		err := fmt.Errorf("failed to get subconfig AzureConfig")
-		logger.Errorf("[+] Error reading configuration for AzureConfig: %s", err)
-		return nil, err
-	}
-
-	selectOperations := map[string]*AIExtensionConfig{}
-	for apiId, aiExtension := range confViper.GetStringMap("selectOperations") {
-		aiExtViper := viper.New()
-
-		if err := aiExtViper.MergeConfigMap(aiExtension.(map[string]interface{})); err != nil {
-			logger.Errorf("[+] Error reading configuration for selectOperations: %s", err)
-		} else {
-			selectOperations[apiId] = &AIExtensionConfig{
-				InputExamples: aiExtViper.GetStringSlice(SPEC_EXT_AI_INPUT_EXAMPLES),
-			}
-		}
+	azureConfigData, exists := configData["azureConfig"].(map[string]interface{})
+	if !exists {
+		azureConfigData = map[string]interface{}{}
 	}
 
 	pluginDataConfig := &PluginDataConfig{
 		AzureConfig: AzureConfig{
-			OpenAIEndpoint:  azureConfig.GetString("openAIEndpoint"),
-			OpenAIKey:       azureConfig.GetString("openAIKey"),
-			ModelDeployment: azureConfig.GetString("modelDeployment"),
+			OpenAIEndpoint:  getConfigValue(DEFAULT_OPENAI_ENDPOINT, azureConfigData, "openAIEndpoint", "OPENAI_ENDPOINT"),
+			OpenAIKey:       getConfigValue("", azureConfigData, "openAIKey", "OPENAI_API_KEY"),
+			ModelDeployment: getConfigValue(DEFAULT_OPENAI_MODEL, azureConfigData, "modelDeployment", "OPENAI_MODEL"),
 		},
-		SelectOperations:     selectOperations,
-		SelectModelEmbedding: confViper.GetString("selectModelEmbedding"),
-		SelectModelsPath:     confViper.GetString("selectModelsPath"),
+		SelectOperations:     map[string]*AIExtensionConfig{},
+		SelectModelEmbedding: DEFAULT_MODEL_EMBEDDINGS_MODEL,
+		SelectModelsPath:     DEFAULT_MODEL_EMBEDDINGS_PATH,
 
 		APIID: apiId,
 	}
