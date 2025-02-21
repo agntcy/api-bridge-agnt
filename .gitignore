@@ -1,0 +1,6 @@
+/tyk-*
+/search-*
+/plugins/*.so
+*_bundle.zip
+/configs/*.manifest.json
+.env

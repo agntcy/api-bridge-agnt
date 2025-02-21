@@ -371,6 +371,16 @@ agntcy
 
 ```
 
+## Troobleshooting
+
+```
+error obtaining VCS status: exit status 128
+	Use -buildvcs=false to disable VCS stamping.
+```
+Ether disable VCS control, or
+git config --global --add safe.directory <root_folder>/api-bridge-agnt/tyk-release-v5.8.0-alpha7
+
+
 ## Contributing
 
 Contributions are what make the open source community such an amazing place to
