@@ -67,7 +67,7 @@ func shouldRewriteQuery(r *http.Request) bool {
 func getRoute(req *http.Request) (*routers.Route, map[string]string, error) {
 	oasDef := ctx.GetOASDefinition(req)
 	if oasDef == nil {
-		logger.Fatalf("[+] No OAS definition found in the request")
+		logger.Errorf("[+] No OAS definition found in the request")
 		return nil, nil, errors.New("no OAS definition found in the request")
 	}
 
