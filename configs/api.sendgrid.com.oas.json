@@ -203,7 +203,6 @@
           }
         },
         "x-nl-input-examples": [
-          "Send an message to 'test@example.com' including a joke. Please use emojis inside it.",
           "Send an email to 'test@example.com' including a joke. Please use emojis inside it.",
           "Tell to 'test@example.com' that his new car is available.",
           "Write a profesional email to reject the candidate 'John Doe <test@example.com'"
