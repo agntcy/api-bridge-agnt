@@ -234,7 +234,7 @@ func QueryEndpointSelection(rw http.ResponseWriter, r *http.Request) {
 }
 
 func init() {
-	logger.Infof("[+] Initializing the nl-api plugin ...")
+	logger.Infof("[+] Initializing API Bridge Agnt plugin ...")
 }
 
 func main() {}
