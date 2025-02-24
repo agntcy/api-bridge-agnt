@@ -2,10 +2,12 @@ module agent-bridge-plugin
 
 go 1.23.4
 
+toolchain go1.24.0
+
 require (
-	github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai v0.7.1
-	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.14.0
-	github.com/TykTechnologies/tyk v1.9.2-0.20250121101604-68a2deba26e9
+	github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai v0.7.2
+	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.17.0
+	github.com/TykTechnologies/tyk v1.9.2-0.20250220131823-5a1bda96c151
 	github.com/getkin/kin-openapi v0.115.0
 	github.com/kelindar/search v0.3.0
 	github.com/stretchr/testify v1.10.0
@@ -13,7 +15,6 @@ require (
 
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/internal v1.10.0 // indirect
-	github.com/AzureAD/microsoft-authentication-library-for-go v1.2.3 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/Masterminds/sprig v2.22.0+incompatible // indirect
@@ -51,6 +52,8 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/go-version v1.7.0 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
+	github.com/huandu/go-clone v1.6.0 // indirect
+	github.com/huandu/go-clone/generic v1.7.2 // indirect
 	github.com/huandu/xstrings v1.5.0 // indirect
 	github.com/imdario/mergo v0.3.13 // indirect
 	github.com/invopop/yaml v0.2.0 // indirect
@@ -73,7 +76,6 @@ require (
 	github.com/perimeterx/marshmallow v1.1.5 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
-	github.com/pmylund/go-cache v2.1.0+incompatible // indirect
 	github.com/r3labs/sse/v2 v2.8.1 // indirect
 	github.com/redis/go-redis/v9 v9.7.0 // indirect
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.0 // indirect
@@ -100,11 +102,11 @@ require (
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
-	golang.org/x/crypto v0.31.0 // indirect
-	golang.org/x/net v0.33.0 // indirect
+	golang.org/x/crypto v0.32.0 // indirect
+	golang.org/x/net v0.34.0 // indirect
 	golang.org/x/oauth2 v0.24.0 // indirect
 	golang.org/x/sync v0.10.0 // indirect
-	golang.org/x/sys v0.28.0 // indirect
+	golang.org/x/sys v0.29.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20241104194629-dd2ea8efbc28 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20241104194629-dd2ea8efbc28 // indirect

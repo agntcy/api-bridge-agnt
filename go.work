@@ -2,5 +2,5 @@ go 1.23.4
 
 use (
 	./plugins
-	./tyk-release-v5.8.0-alpha7
+	./tyk-release-v5.8.0-alpha8
 )
