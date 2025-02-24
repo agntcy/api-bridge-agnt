@@ -63,7 +63,7 @@ func SelectAndRewrite(rw http.ResponseWriter, r *http.Request) {
 	nlq := string(nlqBytes)
 
 	session := &user.SessionState{
-		MetaData: map[string]interface{}{
+		MetaData: map[string]any{
 			METADATA_NLQ:           string(nlq),
 			METADATA_RESPONSE_TYPE: RESPONSE_TYPE_NL,
 		},
@@ -135,7 +135,7 @@ func RewriteQueryToOas(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 	session := &user.SessionState{
-		MetaData: map[string]interface{}{
+		MetaData: map[string]any{
 			METADATA_NLQ:           string(nlSentence),
 			METADATA_RESPONSE_TYPE: r.Header.Get(HEADER_X_NL_RESPONSE_TYPE),
 		},
@@ -234,7 +234,7 @@ func QueryEndpointSelection(rw http.ResponseWriter, r *http.Request) {
 }
 
 func init() {
-	logger.Infof("[+] Initializing the nl-api plugin ...")
+	logger.Infof("[+] Initializing API Bridge Agnt plugin ...")
 }
 
 func main() {}

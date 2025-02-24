@@ -1,8 +1,8 @@
-// SPDX-FileCopyrightText: Copyright (c) 2025 Cisco and/or its affiliates.
-// SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright (c) 2025 Cisco and/or its affiliates.
+# SPDX-License-Identifier: Apache-2.0
 
 # Build settings
-TYK_VERSION ?= v5.8.0-alpha7
+TYK_VERSION ?= v5.8.0-alpha8
 # Options: linux, darwin
 TARGET_OS   ?= darwin
 # Options: amd64, arm64

@@ -73,7 +73,7 @@ func getApiId(r *http.Request) (string, error) {
 	return gateway.Info.ID, nil
 }
 
-func getConfigValue(defaultValue string, configData map[string]interface{}, configMapKey string, envValue string) string {
+func getConfigValue(defaultValue string, configData map[string]any, configMapKey string, envValue string) string {
 	ret := defaultValue
 	v, exists := configData[configMapKey]
 	if exists {
@@ -86,12 +86,12 @@ func getConfigValue(defaultValue string, configData map[string]interface{}, conf
 	return ret
 }
 
-func parseConfigData(apiId string, configData map[string]interface{}) (*PluginDataConfig, error) {
+func parseConfigData(apiId string, configData map[string]any) (*PluginDataConfig, error) {
 	logger.Debugf("[+] Parsing config for api id: %s", apiId)
 
-	azureConfigData, exists := configData["azureConfig"].(map[string]interface{})
+	azureConfigData, exists := configData["azureConfig"].(map[string]any)
 	if !exists {
-		azureConfigData = map[string]interface{}{}
+		azureConfigData = map[string]any{}
 	}
 
 	pluginDataConfig := &PluginDataConfig{
@@ -178,7 +178,7 @@ func initPluginFromRequest(r *http.Request) (*PluginDataConfig, error) {
 			}
 
 			// Add each example to the operation's config
-			for _, example := range aiExamples.([]interface{}) {
+			for _, example := range aiExamples.([]any) {
 				exampleStr, isString := example.(string)
 				if !isString {
 					logger.Fatalf("[+] Error parsing examples for operation %s", operationId)
