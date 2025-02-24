@@ -13,11 +13,11 @@ import (
 
 func TestConfigParseConfigData(t *testing.T) {
 	var tests = []struct {
-		configData     interface{}
+		configData     any
 		expectedConfig PluginDataConfig
 	}{
 		{
-			map[string]interface{}{
+			map[string]any{
 				"azureConfig": map[string]string{
 					"openAIEndpoint": "https://tests-agents.openai.azure.com",
 					"openAIKey":      "xxx",
@@ -36,7 +36,7 @@ func TestConfigParseConfigData(t *testing.T) {
 			},
 		},
 		{
-			map[string]interface{}{},
+			map[string]any{},
 			PluginDataConfig{
 				AzureConfig: AzureConfig{
 					OpenAIEndpoint:  "https://api.openai.com/v1",
@@ -58,7 +58,7 @@ func TestConfigParseConfigData(t *testing.T) {
 		assert.Nil(t, err)
 
 		// convert config json to map
-		configMap := make(map[string]interface{})
+		configMap := make(map[string]any)
 		err = json.Unmarshal(configJSON, &configMap)
 		assert.Nil(t, err)
 
