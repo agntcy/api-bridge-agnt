@@ -258,7 +258,7 @@ func llmNlToOpenAPIRequest(context context.Context, operation *openapi3.Operatio
 
 	operationTool := JsonSchemaResponse{
 		Name:        "convert_to_openapi",
-		Description: "Convert a natural language sentence to a JSON object following the OpenAPI operation schema",
+		Description: "",
 		Schema:      structuredOASResponse,
 	}
 	translation, err := llmCall(context, systemPromptBuf.String(), userPromptBuf.String(), &operationTool, llmConfig)
@@ -309,7 +309,7 @@ func llmCall(ctx context.Context, systemPrompt string, data string, schemaRespon
 				Name:        &schemaResponse.Name,
 				Description: &schemaResponse.Description,
 				Schema:      schemaResponse.Schema,
-				Strict:      to.Ptr(true),
+				Strict:      to.Ptr(false),
 			},
 		}
 	}
@@ -411,51 +411,38 @@ The API response body:
 }
 
 func initStructuredOasResponse() {
-	var err error
-	structuredOASResponse, err = json.Marshal(map[string]any{
-		"type":        "object",
-		"description": "Represents the parameters and the body of an OpenAPI operation",
-		"properties": map[string]any{
-			"in_path_params": map[string]any{
-				"description": "The parameters that are inside the path (in: path)",
-				"type":        "object",
-				"additionalProperties": map[string]any{
-					"type": "string",
-				},
-			},
-			"in_query_params": map[string]any{
-				"description": "The parameters that are part of the query string (in: query)",
-				"type":        "object",
-				"additionalProperties": map[string]any{
-					"type": "array",
-					"items": map[string]any{
-						"type": "string",
-					},
-				},
-			},
-			"in_header_params": map[string]any{
-				"description": "The parameters that are in the headers (in: header)",
-				"type":        "object",
-				"additionalProperties": map[string]any{
-					"type": "array",
-					"items": map[string]any{
-						"type": "string",
-					},
-				},
-			},
-			"request_body": map[string]any{
-				"description": "The optional content of the body",
-				"type":        "string",
-			},
-		},
-		// FIXME: required doesn't seem to work well, why ?
-		// "required":             []string{"in_query_params", "in_path_params", "in_header_params", "request_body"},
-		"required":             []string{"request_body"},
-		"additionalProperties": false,
-	})
-	if err != nil {
-		logger.Fatalf("[+] Error while creating the structured oas response object. It's certainly a bug: %s", err)
-	}
+	structuredOASResponse = []byte(`{
+"type": "object",
+"properties": {
+  "in_path_params": {
+    "description": "The parameters that are inside the path",
+    "type": "object",
+    "additionalProperties": { "type": "string" }
+  },
+  "in_query_params": {
+    "description": "The parameters that are part of the query string. Each parameter is an array of strings",
+    "type": "object",
+    "additionalProperties": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "in_header_params": {
+    "description": "The parameters that are in the headers. Each parameter is an array of strings",
+    "type": "object",
+    "additionalProperties": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "request_body": {
+    "description": "The optional content of the body",
+    "type": "string"
+  }
+},
+"required": ["in_path_params", "in_query_params", "in_header_params", "request_body"],
+"additionalProperties": false
+}`)
 }
 
 func init() {
