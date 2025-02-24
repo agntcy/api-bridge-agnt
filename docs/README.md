@@ -27,7 +27,7 @@ the underlying API implementations.
 - Git
 - jq
 
-Tyk required also a redis database. You can deploy it with:
+Tyk requires also a redis database. You can deploy it with:
 ```bash
 make start_redis
 ```
@@ -75,7 +75,7 @@ make load_plugin
 
 #### Linux
 
-for linux (ubuntu) you can use:
+For linux (ubuntu) you can use:
 ```bash
 TARGET_OS=linux TARGET_ARCH=amd64 SEARCH_LIB=libllama_go.so make start_tyk
 ```
@@ -228,8 +228,8 @@ As a usage example, we will use the API Bridge Agnt to send email via SENGRID AP
 
 - Get an API Key for free from sendgrid [sengrid by twilio](https://sendgrid.com/en-us)
 - Retreive the open api spec here [tsg_mail_v3.json](https://github.com/twilio/sendgrid-oai/blob/main/spec/json/tsg_mail_v3.json)
-- make sure redis is running (otherwise, use ```make start_redis```)
-- make sure you export properly OPENAI parameters
+- Make sure redis is running (otherwise, use `make start_redis`)
+- Make sure you properly export `OPENAI_*` parameters
 - Start the plugin as described on "Getting Started" section
 
 ### Step 1 - Update the API with tyk middleware settings
@@ -320,7 +320,7 @@ For example:
   [...]
 ```
 
-You have an example of a such configuration here ```./configs/api.sendgrid.com.oas.json```
+You have a configuration example here: `./configs/api.sendgrid.com.oas.json`
 
 ### Step 3 - Add the API to tyk configuration
 
