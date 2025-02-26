@@ -1,0 +1,39 @@
+{
+  "metadata": {
+    "description": "Translates human language into REST API requests using OpenAPI specs",
+    "ref": {
+      "name": "API Bridge Agnt",
+      "version": "1.0.0"
+    }
+  },
+  "specs": {
+    "capabilities": {},
+    "input": {
+      "description": "A question in natural language",
+      "type": "string",
+      "examples": [
+        "What is the latest github PR for the agntcy/api-bridge-agnt repository ?",
+        "Send an email from me (casey.agntcy.demo@agntcy.org) to casey.agntcy.demo@agntcy. The message should be a joke using a lot of emojis"
+      ]
+    },
+    "output": {
+      "description": "A reponse in the form of a natural language as if answered by a human",
+      "type": "string",
+      "examples": [
+        "The latest PR for the agntcy/api-bridge-agnt repository is #1234",
+        "I successfully sent the email to Casey"
+      ]
+    },
+    "config": {}
+  },
+  "dependencies": [],
+  "deployments": [
+    {
+      "type": "remote_service",
+      "protocol": {
+        "type": "ACP",
+        "url": "https://fixme.somewhere.com:9876/acp"
+      }
+    }
+  ]
+}
