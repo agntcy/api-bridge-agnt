@@ -57,9 +57,16 @@ func initForTests() error {
           "Give me my starred gists about zig programming language"
         ]
       },
+      "issues/add-assignees": {
+        "x-nl-input-examples": [
+          "Add to assignees the user #NAME# to the issue #NB# ",
+          "Add #NAME# to the assignees of the issue #NB# ",
+          "Add the user #NAME# to the assignees of the issue #NB# "
+        ]
+      },
       "issues/add-labels": {
         "x-nl-input-examples": [
-          "Add label 'bug' to issue 6821 of "
+          "Add label 'bug' to issue #NB of repository"
         ]
       },
       "issues/create": {
@@ -70,7 +77,19 @@ func initForTests() error {
           "Create an issue about"
         ]
       },
+      "issues/get": {
+        "x-nl-input-examples": [
+          "Give me details for issue #NB",
+          "show me details of issue #NB"
+        ]
+      },
       "issues/list-comments": {
+        "x-nl-input-examples": [
+          "List comments for issue #NB of repository",
+          "List comments for issue #NB of repository with 50 results per page"
+        ]
+      },
+      "issues/list-comments-for-repo": {
         "x-nl-input-examples": [
           "List comments for issue",
           "List comments for issue with 50 results per page"
@@ -88,10 +107,39 @@ func initForTests() error {
           "last 3 issues in the repo"
         ]
       },
+      "issues/remove-assignees": {
+        "x-nl-input-examples": [
+          "delete the user #NAME# from assignee on the issue #NB#",
+          "remove #NAME# from the assignees of the issue #NB#"
+        ]
+      },
+      "issues/update": {
+        "x-nl-input-examples": [
+          "Update title of issue #ID to",
+          "Assign issue #ID to",
+          "Set title of issue #ID to ",
+          "Add label to issue #ID",
+          "Set state of issue #ID to open",
+          "Set state of issue #ID to closed"
+        ]
+      },
       "pulls/create": {
         "x-nl-input-examples": [
           "Create a pull request for repository",
-          "From branch, create a pull request to "
+          "From branch, create a pull request to with title"
+        ]
+      },
+      "pulls/create-review-comment": {
+        "x-nl-input-examples": [
+          "Create a comment for pull request #ID on repository NAME/OWNER",
+          "Add a comment for pull request"
+        ]
+      },
+      "pulls/get": {
+        "x-nl-input-examples": [
+          "Get the status of the pull request #ID on repository",
+          "Give me details on pull request #ID",
+          "return the id of the pull request #ID"
         ]
       },
       "pulls/list": {
@@ -100,10 +148,37 @@ func initForTests() error {
           "show me pull requests for repository"
         ]
       },
+      "pulls/list-review-comments": {
+        "x-nl-input-examples": [
+          "Give me comments for pull requests #ID on repository NAME/OWNER",
+          "Show me list of comments for the pull request #ID"
+        ]
+      },
+      "pulls/update": {
+        "x-nl-input-examples": [
+          "Update the state of the pull request #ID on repository",
+          "change the state of the pull request #ID to",
+          "close the pull request #ID",
+          "change the base of the pull request #ID to"
+        ]
+      },
+      "repos/delete-release": {
+        "x-nl-input-examples": [
+          "Delete release #nb",
+          "Remove last release from repository"
+        ]
+      },
       "repos/get-readme": {
         "x-nl-input-examples": [
           "Show me the README for repository owned by",
           "Give readme.md content in the repository"
+        ]
+      },
+      "repos/get-release": {
+        "x-nl-input-examples": [
+          "Give me details for release #nb",
+          "return details for release",
+          "what about release #nb?"
         ]
       },
       "repos/list-commits": {
@@ -121,7 +196,8 @@ func initForTests() error {
       "repos/list-releases": {
         "x-nl-input-examples": [
           "List the releases for repository owned by",
-          "Give releases in repository"
+          "Give releases in repository",
+          "What are the list of releases for repository"
         ]
       },
       "repos/list-tags": {
@@ -236,8 +312,8 @@ func TestEndpointSelection(t *testing.T) {
 	for _, test := range tests {
 		fmt.Printf("----------------------------------------------\ninput=%v\n", test.query)
 		matchingOperation, matchingScore, err := findSelectOperation(APIID_TO_TEST, test.query)
-		assert.Nil(t, err)
 		fmt.Printf("... matchingOperation=%v, matchingScore=%v\n", *matchingOperation, matchingScore)
+		assert.Nil(t, err)
 		assert.Equal(t, test.expectedOperation, *matchingOperation)
 		assert.Equal(t, test.reachThreshold, (matchingScore >= RELEVANCE_THRESHOLD))
 	}
