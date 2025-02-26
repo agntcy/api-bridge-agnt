@@ -56,7 +56,7 @@ setup tyk-release-$(TYK_VERSION)/go.mod:
 	/bin/sh -c 'commit_hash=`cd tyk-release-$(TYK_VERSION) && git rev-parse HEAD` && cd plugins && go get github.com/TykTechnologies/tyk@$${commit_hash}'
 	cd plugins && go mod tidy -go=$$(go mod edit -json ../tyk-release-$(TYK_VERSION)/go.mod | jq -r .Go)
 
-search-release-$(SEARCH_VERSION)/README.md:
+search-release-$(SEARCH_VERSION)/README.md: download_models_for_semrouter
 	@git lfs status || { echo "Error: you must install git-lfs from https://git-lfs.com/ and then enable it: git lfs install [--local]" ; false ; }
 	git clone --branch $(SEARCH_VERSION) --depth 1 https://github.com/kelindar/search.git search-release-$(SEARCH_VERSION) || true
 	cd "search-release-$(SEARCH_VERSION)" && git lfs install --local
@@ -112,3 +112,8 @@ load_plugin_select: configs/httpbin.org.api-selection.json tyk-release-$(TYK_VER
 
 test_plugin_select: configs/httpbin.org.api-selection.json tyk-release-$(TYK_VERSION)/middleware/agent-bridge-plugin.so
 	curl -vv 'http://localhost:8080/httpbin_select/?query=I%20would%20like%20an%20XML%20response.' --header 'Content-Type: text/plain'
+
+download_models_for_semrouter:
+ifeq (,$(wildcard ./tyk-release-$(TYK_VERSION)/models/paraphrase-multilingual-mpnet-base-v2-q8_0.gguf))
+	curl -L https://huggingface.co/sizrox/paraphrase-multilingual-mpnet-base-v2-Q8_0-GGUF/resolve/main/paraphrase-multilingual-mpnet-base-v2-q8_0.gguf -o tyk-release-$(TYK_VERSION)/models/paraphrase-multilingual-mpnet-base-v2-q8_0.gguf
+endif
