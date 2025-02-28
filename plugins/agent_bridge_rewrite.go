@@ -208,22 +208,119 @@ func stripListenPath(listenPath string, path string) string {
 	return path
 }
 
-func pruneOperation(operation openapi3.Operation) *openapi3.Operation {
-	// Here we try to reduce the size of the operation that will be sent to the LLM
-	newOperation := &openapi3.Operation{
-		Parameters:  operation.Parameters,
-		RequestBody: operation.RequestBody,
-		Summary:     operation.Summary,
+func getSchemasRef(schemas []*openapi3.SchemaRef, refs map[string]*openapi3.Schema) {
+	for _, schema := range schemas {
+		if schema == nil {
+			return
+		}
+
+		if schema.Ref != "" {
+			if _, exists := refs[schema.Ref]; exists {
+				continue
+			}
+			refs[schema.Ref] = schema.Value
+		}
+
+		if schema.Value.AnyOf != nil {
+			getSchemasRef(schema.Value.AnyOf, refs)
+		} else if schema.Value.OneOf != nil {
+			getSchemasRef(schema.Value.OneOf, refs)
+		} else if schema.Value.AllOf != nil {
+			getSchemasRef(schema.Value.AllOf, refs)
+		} else if schema.Value.Not != nil {
+			getSchemasRef([]*openapi3.SchemaRef{schema.Value.Not}, refs)
+		} else if schema.Value.Items != nil {
+			getSchemasRef([]*openapi3.SchemaRef{schema.Value.Items}, refs)
+		} else if schema.Value.Properties != nil {
+			for _, prop := range schema.Value.Properties {
+				getSchemasRef([]*openapi3.SchemaRef{prop}, refs)
+			}
+		}
+	}
+}
+
+func getRequestBodyRefs(requestBody *openapi3.RequestBody, refs map[string]*openapi3.Schema) {
+	if requestBody == nil {
+		return
 	}
 
-	// Prefer the description over the summary
+	// Prefer application/json over other content types
+	body := requestBody.Content.Get("application/json")
+	if body == nil {
+		// Fallback
+		body = requestBody.Content.Get("")
+	}
+
+	if body == nil {
+		return
+	}
+
+	getSchemasRef([]*openapi3.SchemaRef{body.Schema}, refs)
+}
+
+func getParameterRefs(parameters openapi3.Parameters, refs map[string]*openapi3.Schema) {
+	for _, p := range parameters {
+		if p.Value != nil && p.Value.Schema != nil {
+			getSchemasRef([]*openapi3.SchemaRef{p.Value.Schema}, refs)
+		}
+	}
+}
+
+// Here we are building a string representation of the operation
+// It contains the list of dereferenced parameters and the list of references used in the operation
+func buildOperationString(operation *openapi3.Operation) (string, error) {
+	refs := map[string]*openapi3.Schema{}
+
+	var sb strings.Builder
+
 	if operation.Description != "" {
-		newOperation.Description = operation.Description
+		fmt.Fprintf(&sb, "Operation description: %s\n", operation.Description)
 	} else if operation.Summary != "" {
-		newOperation.Description = operation.Summary
+		fmt.Fprintf(&sb, "Operation summary: %s\n", operation.Summary)
 	}
 
-	return newOperation
+	if len(operation.Parameters) > 0 {
+		getParameterRefs(operation.Parameters, refs)
+
+		sb.WriteString("The list of Parameters:\n")
+		for _, param := range operation.Parameters {
+			if param == nil || param.Value == nil {
+				continue
+			}
+			m, err := param.Value.MarshalJSON()
+			if err != nil {
+				logger.Errorf("[+] Error marshalling parameter: %s", err)
+				return "", err
+			}
+			fmt.Fprintf(&sb, "- %s\n", string(m))
+		}
+	}
+
+	if operation.RequestBody != nil {
+		getRequestBodyRefs(operation.RequestBody.Value, refs)
+		sb.WriteString("The request body:\n")
+		m, err := operation.RequestBody.Value.MarshalJSON()
+		if err != nil {
+			logger.Errorf("[+] Error marshalling request body: %s", err)
+			return "", err
+		}
+		fmt.Fprintf(&sb, "%s\n", string(m))
+	}
+
+	if len(refs) > 0 {
+		sb.WriteString("The list of References:\n")
+
+		for refName, ref := range refs {
+			m, err := ref.MarshalJSON()
+			if err != nil {
+				logger.Errorf("[+] Error marshalling reference: %s", err)
+				return "", err
+			}
+			fmt.Fprintf(&sb, "- %s: %s\n", refName, string(m))
+		}
+	}
+
+	return sb.String(), nil
 }
 
 // Let's convert that back to a JSON object
@@ -235,22 +332,21 @@ type openAPIOperationParams struct {
 }
 
 func llmNlToOpenAPIRequest(context context.Context, operation *openapi3.Operation, nlSentence string, llmConfig *NLAPIConfig) *openAPIOperationParams {
-	lightOperation := pruneOperation(*operation)
-	operationJSON, err := lightOperation.MarshalJSON()
+	operationString, err := buildOperationString(operation)
 	if err != nil {
-		logger.Errorf("[+] Error marshalling operation: %s", err)
+		logger.Errorf("[+] Error while building operation string: %s", err)
 		return nil
 	}
 
 	systemPromptBuf := new(bytes.Buffer)
-	err = tmplQuerySystemPrompt.Execute(systemPromptBuf, TmplPromptOpenAPI{Operation: string(operationJSON), Sentence: nlSentence})
+	err = tmplQuerySystemPrompt.Execute(systemPromptBuf, TmplPromptOpenAPI{Operation: string(operationString), Sentence: nlSentence})
 	if err != nil {
 		logger.Errorf("[+] Error while creating the System prompt: %s", err)
 		return nil
 	}
 
 	userPromptBuf := new(bytes.Buffer)
-	err = tmplQueryUserPrompt.Execute(userPromptBuf, TmplPromptOpenAPI{Operation: string(operationJSON), Sentence: nlSentence})
+	err = tmplQueryUserPrompt.Execute(userPromptBuf, TmplPromptOpenAPI{Operation: string(operationString), Sentence: nlSentence})
 	if err != nil {
 		logger.Errorf("[+] Error while creating the User prompt: %s", err)
 		return nil
