@@ -21,7 +21,8 @@ func findSelectOperation(apiId string, input string) (*string, float64, error) {
 	apiSpecIndex, present := apiSpecIndices[apiId]
 	apiSpecIndicesLock.RUnlock()
 	if !present {
-		return nil, 0, fmt.Errorf("no index found for api: %s", apiId)
+		// This API has no x-nl-input-examples
+		return nil, 0, nil
 	}
 	pluginConfigLock.RLock()
 	pluginDataConfig, present := pluginConfig[apiId]
