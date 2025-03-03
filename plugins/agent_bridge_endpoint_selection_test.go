@@ -22,7 +22,7 @@ func initForTests() error {
   "tyk-github-id": {
     "azureConfig": {
       "openAIKey": "xxx",
-      "openAIEndpoint": "https://smith-project-agents.openai.azure.com",
+      "openAIEndpoint": "",
       "modelDeployment": "gpt-4o-mini"
     },
     "selectOperations": {
@@ -59,9 +59,9 @@ func initForTests() error {
       },
       "issues/add-assignees": {
         "x-nl-input-examples": [
-          "Add to assignees the user #NAME# to the issue #NB# ",
-          "Add #NAME# to the assignees of the issue #NB# ",
-          "Add the user #NAME# to the assignees of the issue #NB# "
+          "Add to assignees the user #NAME# to the issue #NB#",
+          "Add #NAME# to the assignees of the issue #NB#",
+          "Add the user #NAME# to the assignees of the issue #NB#"
         ]
       },
       "issues/add-labels": {
@@ -212,7 +212,7 @@ func initForTests() error {
     "llmConfig": {
       "AzureConfig": {
         "openAIKey": "xxx",
-        "openAIEndpoint": "https://smith-project-agents.openai.azure.com",
+        "openAIEndpoint": "",
         "modelDeployment": "gpt-4o-mini"
       }
     },
@@ -228,6 +228,7 @@ func initForTests() error {
 	pluginDataConfig := pluginConfig[APIID_TO_TEST]
 	pluginDataConfig.AzureConfig.OpenAIKey = OPENAPI_KEY
 	pluginDataConfig.LlmConfig.AzureConfig.OpenAIKey = OPENAPI_KEY
+	pluginDataConfig.SelectModelEmbedding = DEFAULT_MODEL_EMBEDDINGS_MODEL
 
 	if pluginDataConfig.AzureConfig.OpenAIKey == "" {
 		return fmt.Errorf("Missing required config for azureConfig.openAIKey")
@@ -239,7 +240,6 @@ func initForTests() error {
 		return fmt.Errorf("Unable to find embedding model %s: %s", pluginDataConfig.SelectModelEmbedding, err)
 	}
 	embeddingModels[pluginDataConfig.SelectModelEmbedding] = modelEmbedder
-	dump("embeddingModels: ", embeddingModels)
 
 	if err := initSelectOperations(APIID_TO_TEST, pluginDataConfig); err != nil {
 		return fmt.Errorf("can't init operations for testing: %s", err)
