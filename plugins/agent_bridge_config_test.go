@@ -5,18 +5,19 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestConfigParseConfigData(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
+		description    string
 		configData     any
 		expectedConfig PluginDataConfig
 	}{
 		{
+			"Some default values",
 			map[string]any{
 				"azureConfig": map[string]string{
 					"openAIEndpoint": "https://tests-agents.openai.azure.com",
@@ -30,12 +31,13 @@ func TestConfigParseConfigData(t *testing.T) {
 					ModelDeployment: "gpt-4o-mini",
 				},
 				SelectOperations:     map[string]*AIExtensionConfig{},
-				SelectModelEmbedding: "MiniLM-L6-v2.Q8_0.gguf",
+				SelectModelEmbedding: DEFAULT_MODEL_EMBEDDINGS_MODEL,
 				SelectModelsPath:     "models",
 				APIID:                "httpbin",
 			},
 		},
 		{
+			"All default values",
 			map[string]any{},
 			PluginDataConfig{
 				AzureConfig: AzureConfig{
@@ -44,33 +46,34 @@ func TestConfigParseConfigData(t *testing.T) {
 					ModelDeployment: "gpt-4o-mini",
 				},
 				SelectOperations:     map[string]*AIExtensionConfig{},
-				SelectModelEmbedding: "MiniLM-L6-v2.Q8_0.gguf",
+				SelectModelEmbedding: DEFAULT_MODEL_EMBEDDINGS_MODEL,
 				SelectModelsPath:     "models",
 				APIID:                "httpbin",
 			},
 		},
 	}
 
-	for _, test := range tests {
-		fmt.Printf("-------------------------------------------\n")
-		// convert config to json
-		configJSON, err := json.Marshal(test.configData)
-		assert.Nil(t, err)
+	for _, tt := range tests {
+		t.Run(tt.description, func(t *testing.T) {
+			// convert config to json
+			configJSON, err := json.Marshal(tt.configData)
+			assert.Nil(t, err)
 
-		// convert config json to map
-		configMap := make(map[string]any)
-		err = json.Unmarshal(configJSON, &configMap)
-		assert.Nil(t, err)
+			// convert config json to map
+			configMap := make(map[string]any)
+			err = json.Unmarshal(configJSON, &configMap)
+			assert.Nil(t, err)
 
-		dataconfig, err := parseConfigData("httpbin", configMap)
-		assert.Nil(t, err)
-		assert.NotNil(t, dataconfig)
+			dataconfig, err := parseConfigData("httpbin", configMap)
+			assert.Nil(t, err)
+			assert.NotNil(t, dataconfig)
 
-		expectedDataConfig, err := json.Marshal(test.expectedConfig)
-		assert.Nil(t, err)
+			expectedDataConfig, err := json.Marshal(tt.expectedConfig)
+			assert.Nil(t, err)
 
-		jsonData, err := json.Marshal(dataconfig)
-		assert.Nil(t, err)
-		assert.Equal(t, string(expectedDataConfig), string(jsonData), "Expected: %s, Got: %s", string(expectedDataConfig), string(jsonData))
+			jsonData, err := json.Marshal(dataconfig)
+			assert.Nil(t, err)
+			assert.Equal(t, string(expectedDataConfig), string(jsonData))
+		})
 	}
 }
