@@ -253,7 +253,7 @@ func initPluginFromRequest(r *http.Request) (*PluginDataConfig, error) {
 
 	logConfig()
 
-	logger.Debugf("[+] Finished initPluginFromRequest fror api id: %s", apiID)
+	logger.Debugf("[+] Finished initPluginFromRequest for api id: %s", apiID)
 	return pluginDataConfig, nil
 }
 
