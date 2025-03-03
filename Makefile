@@ -23,6 +23,12 @@ REQUIRED_BINS := docker go git curl jq cmake
 $(foreach bin,$(REQUIRED_BINS),\
     $(if $(shell command -v $(bin) 2> /dev/null),,$(error Please install `$(bin)`)))
 
+ifeq ($(TARGET_OS), linux)
+    LIB_ENV_VAR = LD_LIBRARY_PATH
+else
+    LIB_ENV_VAR = DYLD_LIBRARY_PATH
+endif
+
 .PHONY: default all build_release build setup clean setup \
   build_plugin check_plugin install_plugin load_plugin \
   test_plugin_select build_search_lib
@@ -38,7 +44,7 @@ build_release:
 	  $(TYK_COMPILER_IMAGE) $(PLUGIN_NAME) _$$(date +%s) $(TARGET_OS) $(TARGET_ARCH)
 
 test: search-release-$(SEARCH_VERSION)/build/lib/$(SEARCH_LIB)
-	DYLD_LIBRARY_PATH=$(PROJECT_ROOT)/search-release-$(SEARCH_VERSION)/build/lib go test -v ./plugins
+	$(LIB_ENV_VAR)=$(PROJECT_ROOT)/search-release-$(SEARCH_VERSION)/build/lib go test -v ./plugins
 
 clean:
 	rm -f go/src/$(PLUGIN_NAME).so
@@ -115,5 +121,5 @@ test_plugin_select: configs/httpbin.org.api-selection.json tyk-release-$(TYK_VER
 
 download_models_for_semrouter:
 ifeq (,$(wildcard ./tyk-release-$(TYK_VERSION)/models/paraphrase-multilingual-mpnet-base-v2-q8_0.gguf))
-	curl -L https://huggingface.co/sizrox/paraphrase-multilingual-mpnet-base-v2-Q8_0-GGUF/resolve/main/paraphrase-multilingual-mpnet-base-v2-q8_0.gguf -o tyk-release-$(TYK_VERSION)/models/paraphrase-multilingual-mpnet-base-v2-q8_0.gguf
+	curl -L 'https://huggingface.co/sizrox/paraphrase-multilingual-mpnet-base-v2-Q8_0-GGUF/resolve/main/paraphrase-multilingual-mpnet-base-v2-q8_0.gguf' -o "tyk-release-$(TYK_VERSION)/models/paraphrase-multilingual-mpnet-base-v2-q8_0.gguf"
 endif

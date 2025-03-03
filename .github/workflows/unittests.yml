@@ -1,0 +1,65 @@
+name: Run Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  TYK_VERSION: v5.8.0-alpha8
+  MODEL: paraphrase-multilingual-mpnet-base-v2-q8_0.gguf
+  TARGET_OS: linux
+
+jobs:
+  golangci:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: make setup
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: "plugins/go.mod"
+          cache-dependency-path: |
+            plugins/go.sum
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          args: --timeout=10m plugins/
+
+  unittest:
+    name: Run Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: "plugins/go.mod"
+          cache-dependency-path: |
+            plugins/go.sum
+
+      - run: |
+          make TYK_VERSION="${{ env.TYK_VERSION }}" setup
+          mkdir -p tyk-release-${{ env.TYK_VERSION }}/models/
+
+      - name: Cache model
+        id: cache-model
+        uses: actions/cache@v4
+        with:
+          path: ./tyk-release-${{ env.TYK_VERSION }}/models/${{ env.MODEL }}
+          key: ${{ runner.os }}-${{ env.MODEL }}
+
+      - name: Run tests
+        run: |
+          make TYK_VERSION="${{ env.TYK_VERSION }}" download_models_for_semrouter
+          make TYK_VERSION="${{ env.TYK_VERSION }}" test
