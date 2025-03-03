@@ -150,8 +150,8 @@ The list of Parameters:
 - {"description":"The age of the person","in":"header","name":"age","schema":{"$ref":"#/components/schemas/age0"}}
 - {"description":"The age of the person","in":"header","name":"name","schema":{"type":"integer"}}
 The list of References:
-- #/components/schemas/age0: {"properties":{"age":{"$ref":"#/components/schemas/age"},"romanage":{"type":"string"}},"type":"object"}
 - #/components/schemas/age: {"format":"int32","type":"integer"}
+- #/components/schemas/age0: {"properties":{"age":{"$ref":"#/components/schemas/age"},"romanage":{"type":"string"}},"type":"object"}
 `,
 		},
 		{
@@ -294,8 +294,8 @@ The list of Parameters:
 The request body:
 {"content":{"application/json":{"schema":{"properties":{"age":{"$ref":"#/components/schemas/age"},"city":{"$ref":"#/components/schemas/city"},"url":{"type":"string"}},"required":["url"],"type":"object"}}},"required":true}
 The list of References:
-- #/components/schemas/age0: {"properties":{"age":{"$ref":"#/components/schemas/age"},"romanage":{"type":"string"}},"type":"object"}
 - #/components/schemas/age: {"format":"int32","type":"integer"}
+- #/components/schemas/age0: {"properties":{"age":{"$ref":"#/components/schemas/age"},"romanage":{"type":"string"}},"type":"object"}
 - #/components/schemas/city: {"type":"string"}
 `,
 				},

@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"net/url"
 	"slices"
+	"sort"
 	"strings"
 	"text/template"
 
@@ -310,7 +311,15 @@ func buildOperationString(operation *openapi3.Operation) (string, error) {
 	if len(refs) > 0 {
 		sb.WriteString("The list of References:\n")
 
-		for refName, ref := range refs {
+		// Sort refs
+		sortedRefs := make([]string, 0, len(refs))
+		for refName := range refs {
+			sortedRefs = append(sortedRefs, refName)
+		}
+		sort.Strings(sortedRefs)
+
+		for _, refName := range sortedRefs {
+			ref := refs[refName]
 			m, err := ref.MarshalJSON()
 			if err != nil {
 				logger.Errorf("[+] Error marshalling reference: %s", err)

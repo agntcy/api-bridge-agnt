@@ -6,7 +6,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"path/filepath"
 	"testing"
 
@@ -212,7 +211,6 @@ func initForTests() error {
     "llmConfig": {
       "AzureConfig": {
         "openAIKey": "xxx",
-        "openAIEndpoint": "",
         "modelDeployment": "gpt-4o-mini"
       }
     },
@@ -220,14 +218,10 @@ func initForTests() error {
   }
 }
 `)
-	OPENAPI_KEY := os.Getenv("OPENAI_API_KEY")
-
 	if err := json.Unmarshal(pluginConfigForTest, &pluginConfig); err != nil {
 		return fmt.Errorf("conversion error for pluginConfig: %s", err)
 	}
 	pluginDataConfig := pluginConfig[APIID_TO_TEST]
-	pluginDataConfig.AzureConfig.OpenAIKey = OPENAPI_KEY
-	pluginDataConfig.LlmConfig.AzureConfig.OpenAIKey = OPENAPI_KEY
 	pluginDataConfig.SelectModelEmbedding = DEFAULT_MODEL_EMBEDDINGS_MODEL
 
 	if pluginDataConfig.AzureConfig.OpenAIKey == "" {
@@ -252,7 +246,7 @@ func TestEndpointSelection(t *testing.T) {
 	err := initForTests()
 	assert.Nil(t, err)
 
-	var tests = []struct {
+	tests := []struct {
 		query             string
 		expectedOperation string
 		reachThreshold    bool
@@ -309,12 +303,13 @@ func TestEndpointSelection(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		fmt.Printf("----------------------------------------------\ninput=%v\n", test.query)
-		matchingOperation, matchingScore, err := findSelectOperation(APIID_TO_TEST, test.query)
-		fmt.Printf("... matchingOperation=%v, matchingScore=%v\n", *matchingOperation, matchingScore)
-		assert.Nil(t, err)
-		assert.Equal(t, test.expectedOperation, *matchingOperation)
-		assert.Equal(t, test.reachThreshold, (matchingScore >= RELEVANCE_THRESHOLD))
+	for _, tt := range tests {
+		t.Run(tt.query, func(t *testing.T) {
+			matchingOperation, matchingScore, err := findSelectOperation(APIID_TO_TEST, tt.query)
+
+			assert.Nil(t, err)
+			assert.Equal(t, tt.expectedOperation, *matchingOperation)
+			assert.Equal(t, tt.reachThreshold, (matchingScore >= RELEVANCE_THRESHOLD))
+		})
 	}
 }
