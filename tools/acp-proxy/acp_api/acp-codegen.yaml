@@ -1,0 +1,8 @@
+package: acp_api
+generate:
+  embedded-spec: true
+  std-http-server: true
+  models: true
+output: acp-gen.go
+output-options:
+  skip-prune: true
