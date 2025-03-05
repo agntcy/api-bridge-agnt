@@ -15,7 +15,6 @@ permissions:
 
 env:
   TYK_VERSION: v5.8.0-alpha8
-  MODEL: paraphrase-multilingual-mpnet-base-v2-q8_0.gguf
   TARGET_OS: linux
 
 jobs:
@@ -48,18 +47,18 @@ jobs:
           cache-dependency-path: |
             plugins/go.sum
 
+      - name: Cache Tyk, Search Library and model
+        id: cache-tyk-search-library-model
+        uses: actions/cache@v4
+        with:
+          path: ./tyk-release-${{ env.TYK_VERSION }}
+          key: ${{ runner.os }}-${{ env.TYK_VERSION }}
+
       - run: |
           make TYK_VERSION="${{ env.TYK_VERSION }}" setup
           mkdir -p tyk-release-${{ env.TYK_VERSION }}/models/
-
-      - name: Cache model
-        id: cache-model
-        uses: actions/cache@v4
-        with:
-          path: ./tyk-release-${{ env.TYK_VERSION }}/models/${{ env.MODEL }}
-          key: ${{ runner.os }}-${{ env.MODEL }}
+          make TYK_VERSION="${{ env.TYK_VERSION }}" download_models_for_semrouter
 
       - name: Run tests
         run: |
-          make TYK_VERSION="${{ env.TYK_VERSION }}" download_models_for_semrouter
           make TYK_VERSION="${{ env.TYK_VERSION }}" test
