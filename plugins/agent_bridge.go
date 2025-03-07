@@ -174,6 +174,16 @@ func RewriteResponseToNl(rw http.ResponseWriter, res *http.Response, req *http.R
 		return
 	}
 
+	if res.Header.Get("Content-Encoding") == "gzip" {
+		bodyBytes, err = GetUnzipContent(bodyBytes)
+		if err != nil {
+			logger.Errorf("[+] Error while unzipping the response body: %s", err)
+			http.Error(rw, INTERNAL_ERROR_MSG, http.StatusInternalServerError)
+			return
+		}
+		res.Header.Del("Content-Encoding")
+	}
+
 	naturalLanguageResponse, err := responseToNL(req, string(bodyBytes))
 	if err != nil {
 		logger.Errorf("[+] Error while converting the response to Natural Language: %s", err)
