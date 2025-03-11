@@ -189,6 +189,22 @@ func initPluginFromRequest(r *http.Request) (*PluginDataConfig, error) {
 		}
 	}
 
+	// If we have no operation with x-nl-input-examples then we rely only on the
+	// descriptions
+	if len(pluginDataConfig.SelectOperations) == 0 {
+		for _, path := range apidef.Paths {
+			for _, operation := range path.Operations() {
+				if operation.OperationID == "" {
+					continue
+				}
+				aiExtentionConfig := &AIExtensionConfig{}
+				aiExtentionConfig.InputExamples = append(aiExtentionConfig.InputExamples, operation.Description)
+				aiExtentionConfig.InputExamples = append(aiExtentionConfig.InputExamples, operation.Summary)
+				pluginDataConfig.SelectOperations[operation.OperationID] = aiExtentionConfig
+			}
+		}
+	}
+
 	if pluginDataConfig.AzureConfig.OpenAIKey == "" {
 		err := fmt.Errorf("Missing required config for azureConfig.openAIKey")
 		logger.Fatalf("[+] Error initializing plugin: %s", err)
