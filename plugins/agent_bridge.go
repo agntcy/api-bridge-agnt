@@ -83,7 +83,7 @@ func SelectAndRewrite(rw http.ResponseWriter, r *http.Request) {
 	}
 	logger.Debugf("[+] Selected endpoint: %#v - %#v", *matchingOperation, matchingScore)
 
-	apidef := ctx.GetOASDefinition(r)
+	apidef := getOASDefinition(r)
 	if apidef == nil {
 		err := fmt.Errorf("API definition is nil")
 		logger.Errorf("[+] SelectAndRewrite: %s", err)

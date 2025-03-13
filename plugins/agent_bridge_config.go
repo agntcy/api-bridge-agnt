@@ -10,8 +10,6 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/TykTechnologies/tyk/ctx"
-
 	"github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/kelindar/search"
@@ -61,7 +59,8 @@ type PluginDataConfig struct {
 }
 
 func getApiId(r *http.Request) (string, error) {
-	apidef := ctx.GetOASDefinition(r)
+	apidef := getOASDefinition(r)
+
 	if apidef == nil {
 		// TOOD: fallback on classic...
 		return "", fmt.Errorf("API definition is nil")
@@ -130,7 +129,7 @@ func initPluginFromRequest(r *http.Request) (*PluginDataConfig, error) {
 
 	logger.Debugf("[+] Initializing for api id: %s", apiID)
 
-	apidef := ctx.GetOASDefinition(r)
+	apidef := getOASDefinition(r)
 	// TOOD: fallback on classic...
 	if apidef == nil {
 		err := fmt.Errorf("API definition is nil")
