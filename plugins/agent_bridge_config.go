@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"sync"
 
+	"github.com/TykTechnologies/tyk/apidef/oas"
 	"github.com/TykTechnologies/tyk/ctx"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai"
@@ -61,7 +62,8 @@ type PluginDataConfig struct {
 }
 
 func getApiId(r *http.Request) (string, error) {
-	apidef := ctx.GetOASDefinition(r)
+	apidef := getOASDefinition(r)
+
 	if apidef == nil {
 		// TOOD: fallback on classic...
 		return "", fmt.Errorf("API definition is nil")
@@ -71,6 +73,19 @@ func getApiId(r *http.Request) (string, error) {
 		return "", fmt.Errorf("Tyk gateway definition is nil")
 	}
 	return gateway.Info.ID, nil
+}
+
+/*
+Note: Tyk function ctx.GetOASDefinition(r) doing "Reflect.Clone(val)" which can cause a stack overflow
+when using a spec with recursive references, like JIRA one
+*/
+func getOASDefinition(r *http.Request) *oas.OAS {
+	if v := r.Context().Value(ctx.OASDefinition); v != nil {
+		if val, ok := v.(*oas.OAS); ok {
+			return val
+		}
+	}
+	return nil
 }
 
 func getConfigValue(defaultValue string, configData map[string]any, configMapKey string, envValue string) string {
@@ -130,7 +145,7 @@ func initPluginFromRequest(r *http.Request) (*PluginDataConfig, error) {
 
 	logger.Debugf("[+] Initializing for api id: %s", apiID)
 
-	apidef := ctx.GetOASDefinition(r)
+	apidef := getOASDefinition(r)
 	// TOOD: fallback on classic...
 	if apidef == nil {
 		err := fmt.Errorf("API definition is nil")
