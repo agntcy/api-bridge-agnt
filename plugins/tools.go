@@ -4,6 +4,10 @@ import (
 	"bytes"
 	"compress/gzip"
 	"io"
+	"net/http"
+
+	"github.com/TykTechnologies/tyk/apidef/oas"
+	"github.com/TykTechnologies/tyk/ctx"
 )
 
 func GetUnzipContent(zipContent []byte) ([]byte, error) {
@@ -20,4 +24,17 @@ func GetUnzipContent(zipContent []byte) ([]byte, error) {
 	}
 
 	return unzippedContent, nil
+}
+
+/*
+Note: This is a workaround for an issue in Tyk function ctx.GetOASDefinition(r) that do a "Reflect.Clone(val)".
+This cause a crash with a stack overflow error when using a spec with recursive references, like JIRA one.
+*/
+func getOASDefinition(r *http.Request) *oas.OAS {
+	if v := r.Context().Value(ctx.OASDefinition); v != nil {
+		if val, ok := v.(*oas.OAS); ok {
+			return val
+		}
+	}
+	return nil
 }
