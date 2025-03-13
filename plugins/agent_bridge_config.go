@@ -10,9 +10,6 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/TykTechnologies/tyk/apidef/oas"
-	"github.com/TykTechnologies/tyk/ctx"
-
 	"github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/kelindar/search"
@@ -73,19 +70,6 @@ func getApiId(r *http.Request) (string, error) {
 		return "", fmt.Errorf("Tyk gateway definition is nil")
 	}
 	return gateway.Info.ID, nil
-}
-
-/*
-Note: Tyk function ctx.GetOASDefinition(r) doing "Reflect.Clone(val)" which can cause a stack overflow
-when using a spec with recursive references, like JIRA one
-*/
-func getOASDefinition(r *http.Request) *oas.OAS {
-	if v := r.Context().Value(ctx.OASDefinition); v != nil {
-		if val, ok := v.(*oas.OAS); ok {
-			return val
-		}
-	}
-	return nil
 }
 
 func getConfigValue(defaultValue string, configData map[string]any, configMapKey string, envValue string) string {
