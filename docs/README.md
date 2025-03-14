@@ -8,6 +8,7 @@ It acts as a translator between human language and structured API
 requests/responses.
 
 Key features:
+
 - Converts natural language queries into valid API requests based on OpenAPI specifications
 - Transforms API responses back into natural language explanations
 - Integrates with Tyk API Gateway as a plugin
@@ -16,7 +17,6 @@ Key features:
 
 This enables developers to build more accessible and user-friendly API interfaces without modifying
 the underlying API implementations.
-
 
 ## Getting Started
 
@@ -28,6 +28,7 @@ the underlying API implementations.
 - jq
 
 Tyk requires also a redis database. You can deploy it with:
+
 ```bash
 make start_redis
 ```
@@ -35,6 +36,7 @@ make start_redis
 ### Local development
 
 Built with:
+
 - [search](https://github.com/kelindar/search) for the semantic router
 - [Tyk](https://github.com/TykTechnologies/tyk.git) for the gateway
 We use these dependencies inside the project. However, you don't need to download it or to build it, 
@@ -59,10 +61,12 @@ export OPENAI_MODEL=gpt-4o-mini
 
 #### Step 2 - Build the plugin and start tyk locally on [Tyk](http://localhost:8080)
 
-Dependencies are managed so that you can just run: 
+Dependencies are managed so that you can just run:
+
 ```bash
-make start_tyk 
+make start_tyk
 ```
+
 This will automatically build "Tyk", "search" and the plugin, then install the plugin and start Tyk gateway
 
 #### Step 3 - Load and configure Tyk with an example API (httpbin.org)
@@ -76,13 +80,15 @@ make load_plugin
 #### Linux
 
 For linux (ubuntu) you can use:
+
 ```bash
 TARGET_OS=linux TARGET_ARCH=amd64 SEARCH_LIB=libllama_go.so make start_tyk
 ```
 
 #### Individual steps for building if needed:
 
-If you need to decompose each task individually, you can split into  
+If you need to decompose each task individually, you can split into
+
 ```bash
 make build_tyk          # build tyk
 make build_search_lib   # build the "search" library, used as semantic router
@@ -143,6 +149,7 @@ request to match the expected API format.
 The content type for this request should be `application/nlq`.
 
 Example:
+
 ```bash
 curl 'http://localhost:8080/github/' \
   --header 'Content-Type: application/nlq' \
@@ -164,6 +171,7 @@ Two headers are available for this request:
 - **X-Nl-Response-Type**: `nl` or `upstream` (default is `upstream`), to select the response format. `nl` will return the response in natural language, while `upstream` will return the original API response.
 
 Example:
+
 ```bash
 curl 'http://localhost:8080/gmail/gmail/v1/users/me/messages/send' \
   --header "Authorization: Bearer YOUR_GOOGLE_TOKEN" \
@@ -174,6 +182,7 @@ curl 'http://localhost:8080/gmail/gmail/v1/users/me/messages/send' \
 ```
 
 In this example "http://localhost:8080/gmail/gmail/v1/users/me/messages/send":
+
 - "/gmail/" is the listen path defined on the x-tyk-api-gateway part of the spec
 - "gmail/v1/users/me/messages/send" is the endpoint on the spec
 
@@ -188,6 +197,7 @@ It can be used standalone or in combination with the `RewriteQueryToOas` middlew
 1. Add OAS spec:
 
 Adding a spec named "httpbin.org.oas.json" located in ./configs folder
+
 ```bash
 curl http://localhost:8080/tyk/apis/oas \
   --header "x-tyk-authorization: foo" \
@@ -209,6 +219,7 @@ curl http://localhost:8080/httpbin/json \
 ```
 
 In this example "http://localhost:8080/httpbin/json":
+
 - "/httpbin/" is the listen path defined on the x-tyk-api-gateway part of the spec
 - "json" is the endpoint on the spec
 
@@ -220,156 +231,11 @@ curl 'http://localhost:8080/github/' \
   -d 'List the first issue for the repository named tyk owned by TykTechnologies with the label bug'
 ```
 
-## Usage
+## Example Usage
 
-As a usage example, we will use the API Bridge Agnt to send email via SENGRID API.
+### [Using Sendgrid Mail API](./using_sendgrid_api.md)
 
-### Prequisites
-
-- Get an API Key for free from sendgrid [sengrid by twilio](https://sendgrid.com/en-us)
-- Retreive the open api spec here [tsg_mail_v3.json](https://github.com/twilio/sendgrid-oai/blob/main/spec/json/tsg_mail_v3.json)
-- Make sure redis is running (otherwise, use `make start_redis`)
-- Make sure you properly export `OPENAI_*` parameters
-- Start the plugin as described on "Getting Started" section
-
-### Step 1 - Update the API with tyk middleware settings
-
-You need to add on the API the parameters allowing the plugin to use it.
-
-```json
-{
-  [...]
-  "x-tyk-api-gateway": {
-    "info": {
-      "id": "tyk-sendgrid-id",
-      "name": "Sendgrid Mail API",
-      "state": {
-        "active": true
-      }
-    },
-    "upstream": {
-      "url": "https://api.sendgrid.com"
-    },
-    "server": {
-      "listenPath": {
-        "value": "/sendgrid/",
-        "strip": true
-      }
-    },
-    "middleware": {
-      "global": {
-        "pluginConfig": {
-          "data": {
-            "enabled": true,
-            "value": {
-            }
-          },
-          "driver": "goplugin"
-        },
-        "postPlugins": [
-          {
-            "enabled": true,
-            "functionName": "SelectAndRewrite",
-            "path": "middleware/agent-bridge-plugin.so"
-          },
-          {
-            "enabled": true,
-            "functionName": "RewriteQueryToOas",
-            "path": "middleware/agent-bridge-plugin.so"
-          }
-        ],
-        "responsePlugins": [
-          {
-            "enabled": true,
-            "functionName": "RewriteResponseToNl",
-            "path": "middleware/agent-bridge-plugin.so"
-          }
-        ]
-      }
-    }
-  },
-  [...]
-```
-
-You have an example of a such configuration here ```./configs/api.sendgrid.com.oas.json```
-
-### Step 2 - Configure an endpoint to allow plugin to retrieve it
-
-On the same oas file, add a "x-nl-input-examples" element to an endpoint with 
-sentence that describe how you can use the endpoint with natural language.
-For example:
-
-```json
-{
-  [...]
-  "paths": {
-    [...]
-    "/v3/mail/send": {
-      [...]
-      "post": {
-        [...]
-        "x-nl-input-examples": [
-          "Send an message to 'test@example.com' including a joke. Please use emojis inside it.",
-          "Send an email to 'test@example.com' including a joke. Please use emojis inside it.",
-          "Tell to 'test@example.com' that his new car is available.",
-          "Write a profesional email to reject the candidate 'John Doe <test@example.com'"
-        ]
-      }
-    }
-  },
-  [...]
-```
-
-You have a configuration example here: `./configs/api.sendgrid.com.oas.json`
-
-### Step 3 - Add the API to tyk configuration
-
-Your OAS API is ready to be integrated on the Tyk plugin:
-
-```bash
-curl http://localhost:8080/tyk/apis/oas \
-  --header "x-tyk-authorization: foo" \
-  --header 'Content-Type: text/plain' \
-  -d@configs/api.sendgrid.com.oas.json
-
-curl http://localhost:8080/tyk/reload/group \
-  --header "x-tyk-authorization: foo"
-```
-
-### Step 4 - Test it !
-
-Replace "agntcy@example.com" with a sender email you have configured on your sendgrid account.
-
-```bash
-curl http://localhost:8080/sendgrid/ \
-  --header "Authorization: Bearer $SENDGRID_API_KEY" \
-  --header 'Content-Type: application/nlq' \
-  -d 'Send a message from me (agntcy@example.com) to John Die <j.doe@example.com>. John is french, the message should be a joke using a lot of emojis, something fun about comparing France and Italy'
-```
-
-As a result, the receiver (j.doe@example.com) must receive a mail like:
-```
-
-Subject: A Little Joke for You! 🇫🇷🇮🇹
-
-Hey John! 😄
-
-I hope you're having a fantastic day! I just wanted to share a little joke with you:
-
-Why did the French chef break up with the Italian chef? 🍽️❤️
-
-Because he couldn't handle all the pasta-bilities! 🍝😂
-
-But don't worry, they still have a "bready" good friendship! 🥖😜
-
-Just remember, whether it's croissants or cannoli, we can all agree that food brings us together! 🍷🍰
-
-Take care and keep smiling! 😊
-
-Best,
-agntcy
-
-```
+### [Adding a new API from scratch](./add_api_opensky.md)
 
 ## Troobleshooting
 
@@ -377,9 +243,9 @@ agntcy
 error obtaining VCS status: exit status 128
 	Use -buildvcs=false to disable VCS stamping.
 ```
+
 Ether disable VCS control, or
 git config --global --add safe.directory <root_folder>/api-bridge-agnt/tyk-release-v5.8.0-alpha7
-
 
 ## Contributing
 
