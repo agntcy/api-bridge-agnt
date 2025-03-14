@@ -121,5 +121,6 @@ test_plugin_select: configs/httpbin.org.api-selection.json tyk-release-$(TYK_VER
 
 download_models_for_semrouter:
 ifeq (,$(wildcard ./tyk-release-$(TYK_VERSION)/models/paraphrase-multilingual-mpnet-base-v2-q8_0.gguf))
+	mkdir -p "tyk-release-$(TYK_VERSION)/models"
 	curl -L 'https://huggingface.co/sizrox/paraphrase-multilingual-mpnet-base-v2-Q8_0-GGUF/resolve/main/paraphrase-multilingual-mpnet-base-v2-q8_0.gguf' -o "tyk-release-$(TYK_VERSION)/models/paraphrase-multilingual-mpnet-base-v2-q8_0.gguf"
 endif
