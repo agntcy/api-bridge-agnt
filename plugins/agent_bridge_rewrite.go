@@ -490,7 +490,7 @@ The OpenAPI operation specification:
 func initResponseTemplates() {
 	var err error
 
-	systemPrompt := `Given a API reponse body, and an instruction from a user. You must convert it to a natural language text, according to the user's request.
+	systemPrompt := `Given a API response body, and an instruction from a user. You must convert it to a natural language text, according to the user's request.
 
 The API response body:
 ====
