@@ -1,6 +1,6 @@
 # API Bridge Agnt
 
-- [Documentation](https://agntcy.github.io/api-bridge-agnt)
+- [Documentation](https://docs.agntcy.org/pages/toolkit/api_bridge_agent.html)
 
 ## About The Project
 
