@@ -117,7 +117,6 @@ func rewriteQueryForRoute(r *http.Request, route *routers.Route, pathParams map[
 		logger.Errorf("[+] Error creating the new request")
 		return errors.New("I'm sorry but I was not able to understand your query")
 	}
-
 	// Override the method
 	r.Method = route.Method
 
@@ -191,7 +190,7 @@ func trimAndLower(s string) string {
 }
 
 func isEnabled(s string) bool {
-	var ENABLED_VALUES = []string{"true", "yes", "1", "ok"}
+	ENABLED_VALUES := []string{"true", "yes", "1", "ok"}
 	return slices.Contains(ENABLED_VALUES, strings.ToLower(s))
 }
 
@@ -240,23 +239,12 @@ func getSchemasRef(schemas []*openapi3.SchemaRef, refs map[string]*openapi3.Sche
 	}
 }
 
-func getRequestBodyRefs(requestBody *openapi3.RequestBody, refs map[string]*openapi3.Schema) {
+func getRequestBodyRefs(requestBody *openapi3.MediaType, refs map[string]*openapi3.Schema) {
 	if requestBody == nil {
 		return
 	}
 
-	// Prefer application/json over other content types
-	body := requestBody.Content.Get("application/json")
-	if body == nil {
-		// Fallback
-		body = requestBody.Content.Get("")
-	}
-
-	if body == nil {
-		return
-	}
-
-	getSchemasRef([]*openapi3.SchemaRef{body.Schema}, refs)
+	getSchemasRef([]*openapi3.SchemaRef{requestBody.Schema}, refs)
 }
 
 func getParameterRefs(parameters openapi3.Parameters, refs map[string]*openapi3.Schema) {
@@ -269,7 +257,7 @@ func getParameterRefs(parameters openapi3.Parameters, refs map[string]*openapi3.
 
 // Here we are building a string representation of the operation
 // It contains the list of dereferenced parameters and the list of references used in the operation
-func buildOperationString(operation *openapi3.Operation) (string, error) {
+func buildOperationString(operation *openapi3.Operation, mediaType *openapi3.MediaType) (string, error) {
 	refs := map[string]*openapi3.Schema{}
 
 	var sb strings.Builder
@@ -298,9 +286,9 @@ func buildOperationString(operation *openapi3.Operation) (string, error) {
 	}
 
 	if operation.RequestBody != nil {
-		getRequestBodyRefs(operation.RequestBody.Value, refs)
+		getRequestBodyRefs(mediaType, refs)
 		sb.WriteString("The request body:\n")
-		m, err := operation.RequestBody.Value.MarshalJSON()
+		m, err := mediaType.Schema.Value.MarshalJSON()
 		if err != nil {
 			logger.Errorf("[+] Error marshalling request body: %s", err)
 			return "", err
@@ -332,6 +320,30 @@ func buildOperationString(operation *openapi3.Operation) (string, error) {
 	return sb.String(), nil
 }
 
+func selectRequestBodyMediaType(requestBody *openapi3.RequestBody) (string, *openapi3.MediaType) {
+	if len(requestBody.Content) == 0 {
+		return "", nil
+	}
+
+	// Return the only content type
+	if len(requestBody.Content) == 1 {
+		for k, v := range requestBody.Content {
+			return k, v
+		}
+	}
+
+	preferedMediaTypes := []string{"application/json"}
+	// Prefered media types over other media types
+	for _, ct := range preferedMediaTypes {
+		mt := requestBody.GetMediaType(ct)
+		if mt != nil {
+			return ct, mt
+		}
+	}
+
+	return "", nil
+}
+
 // Let's convert that back to a JSON object
 type openAPIOperationParams struct {
 	InPathParams   map[string]string `json:"in_path_params"`
@@ -341,7 +353,12 @@ type openAPIOperationParams struct {
 }
 
 func llmNlToOpenAPIRequest(context context.Context, operation *openapi3.Operation, nlSentence string, llmConfig *NLAPIConfig) *openAPIOperationParams {
-	operationString, err := buildOperationString(operation)
+	mediaTypeStr := ""
+	var md *openapi3.MediaType
+	if operation.RequestBody != nil {
+		mediaTypeStr, md = selectRequestBodyMediaType(operation.RequestBody.Value)
+	}
+	operationString, err := buildOperationString(operation, md)
 	if err != nil {
 		logger.Errorf("[+] Error while building operation string: %s", err)
 		return nil
@@ -379,6 +396,9 @@ func llmNlToOpenAPIRequest(context context.Context, operation *openapi3.Operatio
 		logger.Errorf("[+] Error while unmarshalling the JSON object: %s", err)
 		return nil
 	}
+
+	llmOperation.InHeaderParams.Del("Content-Encoding")
+	llmOperation.InHeaderParams.Set("Content-Type", mediaTypeStr)
 
 	return &llmOperation
 }
@@ -464,10 +484,18 @@ func responseToNL(r *http.Request, upstreamResponse string) (string, error) {
 func initQueryTemplates() {
 	var err error
 
-	systemPrompt := `Given an OpenAPI specification operation you convert the natural language sentence to a JSON object following the OpenAPI operation schema.
-You MUST use the exact name of the parameters. DO NOT invent. If information is missing, DO NOT include it. Do not forget to include the content type in the headers.
+	systemPrompt := `
+You are given an OpenAPI operation description with:
+- a list of parameters defined as OpenAPI parameters,
+- an optional request body described as OpenAPI MediaType object,
+- a list of references ($ref) if used in the parameters or the the request body.
 
-The OpenAPI operation specification:
+Your goal is to convert the natural language sentence to a JSON object following the OpenAPI operation description.
+- Only use required parameters,
+- You MUST use the exact name of the parameters.
+- DO NOT invent. If information is missing, DO NOT include it.
+
+The OpenAPI operation description:
 ====
 {{.Operation}}
 ====`
