@@ -198,6 +198,11 @@
         ],
         "tags": [
           "users"
+        ],
+        "x-nl-input-examples": [
+            "give me the list of drafts in my mailbox",
+            "show me the list of drafts",
+            "search for drafts with"
         ]
       },
       "parameters": [
@@ -401,6 +406,10 @@
         ],
         "tags": [
           "users"
+        ],
+        "x-nl-input-examples": [
+            "Creates a new draft",
+            "Creates a new draft with the `DRAFT` label."
         ]
       }
     },
@@ -606,6 +615,9 @@
         ],
         "tags": [
           "users"
+        ],
+        "x-nl-input-examples": [
+            "Sends the specified, existing draft to the recipients in the `To`, `Cc`, and `Bcc` headers."
         ]
       }
     },
@@ -674,6 +686,9 @@
         ],
         "tags": [
           "users"
+        ],
+        "x-nl-input-examples": [
+            "deletes the draft"
         ]
       },
       "get": {
@@ -761,6 +776,9 @@
         ],
         "tags": [
           "users"
+        ],
+        "x-nl-input-examples": [
+            "gets the draft"
         ]
       },
       "parameters": [
@@ -973,6 +991,9 @@
         ],
         "tags": [
           "users"
+        ],
+        "x-nl-input-examples": [
+            "updates the draft content to"
         ]
       }
     },
@@ -1090,6 +1111,9 @@
         ],
         "tags": [
           "users"
+        ],
+        "x-nl-input-examples": [
+            "Lists the history of all changes to the given mailbox"
         ]
       },
       "parameters": [
@@ -1199,6 +1223,11 @@
         ],
         "tags": [
           "users"
+        ],
+        "x-nl-input-examples": [
+            "Lists all labels",
+            "give me all labels on my mailbox",
+            "show me all labels"
         ]
       },
       "parameters": [
@@ -1299,6 +1328,9 @@
         ],
         "tags": [
           "users"
+        ],
+        "x-nl-input-examples": [
+            "Creates a new label on my mailbox"
         ]
       }
     },
@@ -1359,6 +1391,9 @@
         ],
         "tags": [
           "users"
+        ],
+        "x-nl-input-examples": [
+            "Delete the label with the ID"
         ]
       },
       "get": {
@@ -1440,6 +1475,10 @@
         ],
         "tags": [
           "users"
+        ],
+        "x-nl-input-examples": [
+            "get the labels",
+            "give me the list of all labels on my mailbox"
         ]
       },
       "parameters": [
@@ -1734,6 +1773,12 @@
         ],
         "tags": [
           "users"
+        ],
+        "x-nl-input-examples": [
+            "Lists all messages",
+            "give me all messages on my mailbox",
+            "show me all messages",
+            "show me all my messages with"
         ]
       },
       "parameters": [
@@ -1951,6 +1996,7 @@
           "users"
         ],
         "x-nl-input-examples": [
+          "Send a message with the subject to",
           "Send a message to me including a joke. Please use emojis inside it.",
           "Write a reminder to myself to buy milk at 5pm.",
           "Insert a message into my mailbox about the meeting at 3pm."
@@ -2615,6 +2661,10 @@
         ],
         "tags": [
           "users"
+        ],
+        "x-nl-input-examples": [
+          "delete the message with id",
+          "remove the message with id"
         ]
       },
       "get": {
@@ -2739,6 +2789,11 @@
         ],
         "tags": [
           "users"
+        ],
+        "x-nl-input-examples": [
+          "give me details of the message with id",
+          "show me the message with id",
+          "show me the message with id in full format"
         ]
       },
       "parameters": [
