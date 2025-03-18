@@ -191,12 +191,12 @@ The list of References:
 		 `),
 			`Operation summary: The request's query parameters.
 The request body:
-{"content":{"application/json":{"schema":{"properties":{"url":{"type":"string"}},"required":["url"],"type":"object"}}},"required":true}
+{"properties":{"url":{"type":"string"}},"required":["url"],"type":"object"}
 `,
 		},
 		{
-					"Simple operation - params, request body, with $refs ",
-					[]byte(`{
+			"Simple operation - params, request body, with $refs ",
+			[]byte(`{
 				"openapi": "3.0.0",
         "info": {
           "title": "Minimal API",
@@ -286,19 +286,19 @@ The request body:
         }
 	  }
 				 `),
-					`Operation summary: The request's query parameters.
+			`Operation summary: The request's query parameters.
 The list of Parameters:
 - {"in":"query","name":"genre"}
 - {"description":"The age of the person","in":"header","name":"age","schema":{"$ref":"#/components/schemas/age0"}}
 - {"description":"The age of the person","in":"header","name":"name","schema":{"type":"integer"}}
 The request body:
-{"content":{"application/json":{"schema":{"properties":{"age":{"$ref":"#/components/schemas/age"},"city":{"$ref":"#/components/schemas/city"},"url":{"type":"string"}},"required":["url"],"type":"object"}}},"required":true}
+{"properties":{"age":{"$ref":"#/components/schemas/age"},"city":{"$ref":"#/components/schemas/city"},"url":{"type":"string"}},"required":["url"],"type":"object"}
 The list of References:
 - #/components/schemas/age: {"format":"int32","type":"integer"}
 - #/components/schemas/age0: {"properties":{"age":{"$ref":"#/components/schemas/age"},"romanage":{"type":"string"}},"type":"object"}
 - #/components/schemas/city: {"type":"string"}
 `,
-				},
+		},
 	}
 
 	for _, tt := range tests {
@@ -309,7 +309,11 @@ The list of References:
 				t.Fatalf("Invalid OpenAPI specification, there is a problem in the tests: %s", err)
 			}
 			operation := doc.Paths["/test"].Get
-			got, _ := buildOperationString(operation)
+			var md *openapi3.MediaType
+			if operation.RequestBody != nil {
+				md = operation.RequestBody.Value.GetMediaType("application/json")
+			}
+			got, _ := buildOperationString(operation, md)
 			assert.Equal(t, tt.expected, got)
 		})
 	}
