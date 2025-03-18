@@ -200,9 +200,15 @@
           "users"
         ],
         "x-nl-input-examples": [
-            "give me the list of drafts in my mailbox",
-            "show me the list of drafts",
-            "search for drafts with"
+          "give me a list of drafts of my drafts",
+          "give me the list of drafts in my mailbox",
+          "show me the list of drafts",
+          "show me my drafts",
+          "show me my drafts in my mailbox",
+          "what is the list of my drafts?",
+          "what is the list of my draft currently on my mailbox?",
+          "show me the list of my current draft",
+          "search for drafts with"
         ]
       },
       "parameters": [
@@ -408,8 +414,9 @@
           "users"
         ],
         "x-nl-input-examples": [
-            "Creates a new draft",
-            "Creates a new draft with the `DRAFT` label."
+          "Creates a new draft",
+          "Creates a new draft with the label.",
+          "Add a new draft on my mailbox with subject "
         ]
       }
     },
@@ -617,7 +624,9 @@
           "users"
         ],
         "x-nl-input-examples": [
-            "Sends the specified, existing draft to the recipients in the `To`, `Cc`, and `Bcc` headers."
+          "Send my draft with id to ",
+          "Take the draft and send it to ",
+          "Sends the specified, existing draft to the recipients in the `To`, `Cc`, and `Bcc` headers."
         ]
       }
     },
@@ -688,7 +697,10 @@
           "users"
         ],
         "x-nl-input-examples": [
-            "deletes the draft"
+          "deletes the draft",
+          "deletes the draft from my mailbox",
+          "remove the draft",
+          "remove the draft with id from my mailbox"
         ]
       },
       "get": {
@@ -778,7 +790,11 @@
           "users"
         ],
         "x-nl-input-examples": [
-            "gets the draft"
+          "gets the draft",
+          "show me details of draft",
+          "show me details of draft on my mailbox",
+          "give me details of draft",
+          "give me details of draft on my mailbox"
         ]
       },
       "parameters": [
@@ -993,8 +1009,11 @@
           "users"
         ],
         "x-nl-input-examples": [
-            "updates the draft content to"
-        ]
+          "updates the draft content to",
+          "update my draft with content",
+          "set content of my draft to",
+          "change content of draft to"
+       ]
       }
     },
     "/gmail/v1/users/{userId}/history": {
@@ -1113,8 +1132,10 @@
           "users"
         ],
         "x-nl-input-examples": [
-            "Lists the history of all changes to the given mailbox"
-        ]
+          "Lists the history of all changes to the given mailbox",
+          "give me the history of my mailbox",
+          "what is the history of my mailbox"
+       ]
       },
       "parameters": [
         {
@@ -1225,9 +1246,9 @@
           "users"
         ],
         "x-nl-input-examples": [
-            "Lists all labels",
-            "give me all labels on my mailbox",
-            "show me all labels"
+          "Lists all labels",
+          "give me all labels on my mailbox",
+          "show me all labels"
         ]
       },
       "parameters": [
@@ -1330,8 +1351,12 @@
           "users"
         ],
         "x-nl-input-examples": [
-            "Creates a new label on my mailbox"
-        ]
+          "Creates a new label on my mailbox",
+          "create a new label with name",
+          "create a new label named on my mailbox",
+          "add a label with name",
+          "add a new label with name on my mailbox"
+       ]
       }
     },
     "/gmail/v1/users/{userId}/labels/{id}": {
@@ -1393,7 +1418,10 @@
           "users"
         ],
         "x-nl-input-examples": [
-            "Delete the label with the ID"
+          "Delete the label with the ID",
+          "Delete the label from my mailbox",
+          "remove the label",
+          "remove the label with id from my mailbox"
         ]
       },
       "get": {
@@ -1477,8 +1505,10 @@
           "users"
         ],
         "x-nl-input-examples": [
-            "get the labels",
-            "give me the list of all labels on my mailbox"
+          "give me the label with id",
+          "give me the label on my mailbox",
+          "show me details of the label",
+          "show me details of the label on my mailbox"
         ]
       },
       "parameters": [
@@ -1662,6 +1692,14 @@
         ],
         "tags": [
           "users"
+        ],
+        "x-nl-input-examples": [
+          "update label with name=",
+          "change name of label to",
+          "update the name of the label to",
+          "on my mailbox, I want to update the label",
+          "update the visibility of my label to",
+          "update the color of my label to"
         ]
       }
     },
@@ -1775,10 +1813,10 @@
           "users"
         ],
         "x-nl-input-examples": [
-            "Lists all messages",
-            "give me all messages on my mailbox",
-            "show me all messages",
-            "show me all my messages with"
+          "Lists all messages",
+          "give me all messages on my mailbox",
+          "show me all messages",
+          "show me all my messages with"
         ]
       },
       "parameters": [
@@ -2614,9 +2652,17 @@
           "users"
         ],
         "x-nl-input-examples": [
-          "Send an email to 'test@example.com' including a joke. Please use emojis inside it.",
+          "Send an email to ",
+          "send an email to with subject  ",
+          "send an email with subject to ",
+          "send a message to with subject. The content of the message must be",
+          "write an email to with subject ",
+          "write an email to with subject with content ",
+          "write a message to with subject with content ",
+          "write an email to ",
+          "write an email to the subject must be, and the content",
           "Tell to 'test@example.com' that his new car is available.",
-          "Write a profesional email to reject the candidate 'John Doe <test@example.com'"
+          "Write a professional email to reject the candidate 'John Doe \u003ctest@example.com'"
         ]
       }
     },
@@ -2664,7 +2710,9 @@
         ],
         "x-nl-input-examples": [
           "delete the message with id",
-          "remove the message with id"
+          "delete the message with id from my mailbox",
+          "remove the message with id",
+          "remove the message with id from my mailbox"
         ]
       },
       "get": {
@@ -2792,6 +2840,9 @@
         ],
         "x-nl-input-examples": [
           "give me details of the message with id",
+          "show me my message",
+          "show me my message with id",
+          "show me message with id from my mailbox",
           "show me the message with id",
           "show me the message with id in full format"
         ]
@@ -2932,6 +2983,14 @@
         ],
         "tags": [
           "users"
+        ],
+        "x-nl-input-examples": [
+          "update message and add labels",
+          "update message with id and remove label",
+          "add label on message",
+          "add label on message with id",
+          "remove label from message",
+          "remove label from message with id"
         ]
       }
     },
@@ -3026,6 +3085,12 @@
         ],
         "tags": [
           "users"
+        ],
+        "x-nl-input-examples": [
+          "move the message to the trash",
+          "move the message with id to the trash",
+          "move to the trash the message",
+          "put the message in the trash"
         ]
       }
     },
@@ -3120,6 +3185,11 @@
         ],
         "tags": [
           "users"
+        ],
+        "x-nl-input-examples": [
+          "remove the message from the trash",
+          "remove the message with id from the trash",
+          "remove from the trash the message"
         ]
       }
     },
@@ -3212,6 +3282,9 @@
         ],
         "tags": [
           "users"
+        ],
+        "x-nl-input-examples": [
+          "gets attachment from message"
         ]
       },
       "parameters": [
@@ -3321,6 +3394,11 @@
         ],
         "tags": [
           "users"
+        ],
+        "x-nl-input-examples": [
+          "gets my profile",
+          "show me my profile",
+          "show me my profile details"
         ]
       },
       "parameters": [
@@ -5533,6 +5611,11 @@
         ],
         "tags": [
           "users"
+        ],
+        "x-nl-input-examples": [
+          "gets the IMAP settings",
+          "show me my IMAP settings",
+          "what are my IMAP settings"
         ]
       },
       "parameters": [
@@ -5617,6 +5700,11 @@
         ],
         "tags": [
           "users"
+        ],
+        "x-nl-input-examples": [
+          "update my IMAP settings to",
+          "change my IMAP settings ",
+          "set my IMAP settings to"
         ]
       }
     },
@@ -5833,6 +5921,11 @@
         ],
         "tags": [
           "users"
+        ],
+        "x-nl-input-examples": [
+          "gets the POP settings",
+          "show me my POP settings",
+          "what are my POP settings"
         ]
       },
       "parameters": [
@@ -5917,6 +6010,11 @@
         ],
         "tags": [
           "users"
+        ],
+        "x-nl-input-examples": [
+          "update my POP settings to",
+          "change my POP settings ",
+          "set my POP settings to"
         ]
       }
     },
@@ -7335,6 +7433,16 @@
         ],
         "tags": [
           "users"
+        ],
+        "x-nl-input-examples": [
+          "Delete thread from my mailbox",
+          "Delete the current conversation",
+          "Remove the conversation from my mailbox",
+          "Delete the current thread",
+          "Delete the current thread from my mailbox",
+          "Remove the current thread from my mailbox",
+          "Delete the current conversation from my mailbox",
+          "Remove the current conversation from my mailbox"
         ]
       },
       "get": {
@@ -7458,6 +7566,13 @@
         ],
         "tags": [
           "users"
+        ],
+        "x-nl-input-examples": [
+          "show me details of the thread",
+          "show me detais of the current conversation",
+          "show me details of the current thread",
+          "what is the detail of the thread",
+          "what is the detail of the conversation"
         ]
       },
       "parameters": [
@@ -7596,6 +7711,10 @@
         ],
         "tags": [
           "users"
+        ],
+        "x-nl-input-examples": [
+          "change label of the thread to",
+          "change the label of the thread to"
         ]
       }
     },
@@ -7690,6 +7809,12 @@
         ],
         "tags": [
           "users"
+        ],
+        "x-nl-input-examples": [
+          "move the thread to the trash",
+          "move the thread with id to the trash",
+          "move to the trash the thread",
+          "put the thread in the trash"
         ]
       }
     },
@@ -7784,6 +7909,11 @@
         ],
         "tags": [
           "users"
+        ],
+        "x-nl-input-examples": [
+          "remove the thread from the trash",
+          "remove the thread with id from the trash",
+          "remove from the trash the thread"
         ]
       }
     },

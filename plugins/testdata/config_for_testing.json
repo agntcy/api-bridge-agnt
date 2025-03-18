@@ -197,427 +197,6 @@
         },
         "APIID": "tyk-github-id"
     },
-    "tyk-jira-id": {
-        "azureConfig": {
-            "openAIKey": "xxx",
-            "openAIEndpoint": "",
-            "modelDeployment": "gpt-4o-mini"
-        },
-        "selectOperations": {
-            "addUserToGroup": {
-                "x-nl-input-examples": [
-                    "add user #ID# to group #ID#",
-                    "user #ID# is now part of group #ID#"
-                ]
-            },
-            "assignIssue": {
-                "x-nl-input-examples": [
-                    "assign issue #ID# to user #ID#",
-                    "add assignee #ID# to issue #ID#"
-                ]
-            },
-            "copyDashboard": {
-                "x-nl-input-examples": [
-                    "create a copy of dashboard #ID# with name #NAME#",
-                    "copy the dashboard #ID# and set name=#NAME# and description=#DESCRIPTION# to the new one",
-                    "duplicate dashboard #ID# and change name to #NAME"
-                ]
-            },
-            "createComponent": {
-                "x-nl-input-examples": [
-                    "create a component named #NAME# on project #ID# with description '#DESCRIPTION#'",
-                    "add a new component '#NAME#' on project #ID#"
-                ]
-            },
-            "createCustomField": {
-                "x-nl-input-examples": [
-                    "Create a custom field named #NAME# of type #TYPE# and description '#DESCRIPTION#'",
-                    "Create a custom field named 'Approvers' of type 'com.atlassian.jira.plugin.system.customfieldtypes:multiuserpicker' and description 'Contains users needed for approval. This custom field was created by Jira Service Desk.'",
-                    "Create a custom field named 'Change reason' of type 'com.atlassian.jira.plugin.system.customfieldtypes:select' and description 'Choose the reason for the change request'"
-                ]
-            },
-            "createDashboard": {
-                "x-nl-input-examples": [
-                    "create a new dashboard named '#NAMED#' with permissions '#PERMISSIONS#'",
-                    "create a global dashboard named '#NAMED#' "
-                ]
-            },
-            "createFilter": {
-                "x-nl-input-examples": [
-                    "Create a filter that lists all open bugs",
-                    "Create a filter that lists all my tasks, names '#NAME#'"
-                ]
-            },
-            "createGroup": {
-                "x-nl-input-examples": [
-                    "create a group of users named #NAMED#",
-                    "create users group #NAMED#"
-                ]
-            },
-            "createIssue": {
-                "x-nl-input-examples": [
-                    "I want to create an issue with summary for project and assign it to",
-                    "add an issue on project #ID# with summary '#DESCRIPTION#'. It concerns component #COMPONENT#. Assign it to #USER#",
-                    "create a subtask for issue #ID# with summary '#DESCRIPTION#' and label #LABEL#. Assign it to #USER#",
-                    "add a subtask #DESCRIPTION# on task #ID# and assign it to #USER#",
-                    "add a subtask on task #ID# with summary '#DESCRIPTION#' and label #LABEL#"
-                ]
-            },
-            "createIssueType": {
-                "x-nl-input-examples": [
-                    "create a new issue type named #NAME# with description #DESCRIPTION#",
-                    "add issue type #NAME#"
-                ]
-            },
-            "createPriority": {
-                "x-nl-input-examples": [
-                    "Create a new priority"
-                ]
-            },
-            "createProject": {
-                "x-nl-input-examples": [
-                    "create a project named #NAME# and assign it to me",
-                    "add a new project #NAME with name #NAME# and description '#DESCRIPTION#'"
-                ]
-            },
-            "createVersion": {
-                "x-nl-input-examples": [
-                    "create a new version named #NAME# with description '#DESCRIPTION#' for project #ID#",
-                    "Add a new version for project #ID#, named #NAME# and with the descrition '#DESCRIPTION#'",
-                    "I would like to create a new version for project #ID# with the name #NAME# and the description '#DESCRIPTION#'",
-                    "add a new version named #NAME# for project #ID# with description '#DESCRIPTION'"
-                ]
-            },
-            "deleteComponent": {
-                "x-nl-input-examples": [
-                    "delete component #ID#",
-                    "remove component with id #ID#"
-                ]
-            },
-            "deleteCustomField": {
-                "x-nl-input-examples": [
-                    "delete the field #ID#",
-                    "delete the custom field #ID#",
-                    "remove the field #ID#",
-                    "remove the custom field #ID#"
-                ]
-            },
-            "deleteDashboard": {
-                "x-nl-input-examples": [
-                    "delete dashboard #ID#",
-                    "remove dashboard with id #ID#"
-                ]
-            },
-            "deleteIssue": {
-                "x-nl-input-examples": [
-                    "delete the issue #ID#",
-                    "remove issue #ID#",
-                    "I want to delete the issue #ID# from project"
-                ]
-            },
-            "deleteIssueType": {
-                "x-nl-input-examples": [
-                    "delete issue type #ID#",
-                    "remove issue type #ID# from project"
-                ]
-            },
-            "deletePriority": {
-                "x-nl-input-examples": [
-                    "delete the priority #ID#",
-                    "remove priority #ID#"
-                ]
-            },
-            "deleteProject": {
-                "x-nl-input-examples": [
-                    "delete project with id #ID#",
-                    "remove project #ID#"
-                ]
-            },
-            "deleteProjectAsynchronously": {
-                "x-nl-input-examples": [
-                    "delete project #ID#",
-                    "remove the project #ID#"
-                ]
-            },
-            "deleteVersion": {
-                "x-nl-input-examples": [
-                    "delete version #ID# of the project #ID#",
-                    "remove a version with #ID# of the project #ID#",
-                    "delete the version of the project #ID# with id #ID#"
-                ]
-            },
-            "editIssue": {
-                "x-nl-input-examples": [
-                    "update issue #ID# summary to",
-                    "update issue #ID# customfield_10000 to ",
-                    "change the field of issue #ID# to ",
-                    "edit issue #ID#. Change summary to ",
-                    "Add label #LABEL# on issue #ID#",
-                    "Set components of issue #ID# to ",
-                    "Components of issue #ID# are",
-                    "update the issue #ID#. component is",
-                    "assign the issue #ID# to user #USER#"
-                ]
-            },
-            "findComponentsForProjects": {
-                "x-nl-input-examples": [
-                    "give me components on project #ID#",
-                    "show me the list of components on project #ID#",
-                    "show me components from project #ID# in page #NB#, #NB# items per page",
-                    "show me components from project #ID# with name containing #NAME#",
-                    "give me conponents on page #NB# from project #ID#, order by name, #NB# items per page"
-                ]
-            },
-            "getAllDashboards": {
-                "x-nl-input-examples": [
-                    "give me the list of all my dashboards",
-                    "show me list of my dashboards"
-                ]
-            },
-            "getAllLabels": {
-                "x-nl-input-examples": [
-                    "show me the list of labels on project",
-                    "give me the list of labels, content of page #NB#, #NB items per page",
-                    "what is the list of current labels"
-                ]
-            },
-            "getAllProjects": {
-                "x-nl-input-examples": [
-                    "show me the list of available projects",
-                    "give me my list of projects",
-                    "give me my projects"
-                ]
-            },
-            "getCommentsByIds": {
-                "x-nl-input-examples": [
-                    "get comments with ids [1, 2, 5, 10]"
-                ]
-            },
-            "getComponent": {
-                "x-nl-input-examples": [
-                    "get component #ID#",
-                    "show me details of component #ID#"
-                ]
-            },
-            "getCurrentUser": {
-                "x-nl-input-examples": [
-                    "get me my details",
-                    "show details about me",
-                    "who am I"
-                ]
-            },
-            "getDashboard": {
-                "x-nl-input-examples": [
-                    "give me details of dashboard #ID#",
-                    "get dashboard with id #ID#",
-                    "show me dashboard #ID#"
-                ]
-            },
-            "getDashboardsPaginated": {
-                "x-nl-input-examples": [
-                    "give me the list of dashboards for group #ID#",
-                    "show me list of dashboards for project #ID#",
-                    "return the list of dashboards for account id #ID#",
-                    "search for the list of dashboard that match name #FILTER#"
-                ]
-            },
-            "getEvents": {
-                "x-nl-input-examples": [
-                    "give me the list of all issue events",
-                    "show me the list of all events",
-                    "get all issue events"
-                ]
-            },
-            "getFields": {
-                "x-nl-input-examples": [
-                    "get all my custom fields",
-                    "return the list of custom issue fields",
-                    "show me all custom fields",
-                    "give me the list of known custom fields"
-                ]
-            },
-            "getIssue": {
-                "x-nl-input-examples": [
-                    "give me issue #ID# details",
-                    "show me details for issue #ID#",
-                    "I want to see issue #ID#. Show me only name and description",
-                    "can you give me details for issue #ID#"
-                ]
-            },
-            "getIssueAllTypes": {
-                "x-nl-input-examples": [
-                    "get the list of issue types for project",
-                    "give me the list of all issue types",
-                    "what is the list of current issue types created for the project"
-                ]
-            },
-            "getIssueType": {
-                "x-nl-input-examples": [
-                    "show me details of issue type #ID#",
-                    "give me details of issue type #ID#",
-                    "show me issue type #ID#"
-                ]
-            },
-            "getMyPermissions": {
-                "x-nl-input-examples": [
-                    "get all my permissions",
-                    "get all my permissions I have",
-                    "show me all my permissions",
-                    "give me the list of permissions I have on this project"
-                ]
-            },
-            "getPermittedProjects": {
-                "x-nl-input-examples": [
-                    "give me the list of projects reacheable",
-                    "give me the list of projects on which I work on",
-                    "show me the list of project with the permission"
-                ]
-            },
-            "getPriorities": {
-                "x-nl-input-examples": [
-                    "give me the list of priorities defined",
-                    "show me list of priorities actually defined",
-                    "list me the list of priorities for project"
-                ]
-            },
-            "getProject": {
-                "x-nl-input-examples": [
-                    "get details of project with id #ID#",
-                    "show me project #ID#",
-                    "give me details of project #ID#"
-                ]
-            },
-            "getProjectComponents": {
-                "x-nl-input-examples": [
-                    "give me the list of components of project #ID#",
-                    "what is the list of components on project #ID#?",
-                    "which components are included on project #ID#?",
-                    "show me the list of all components of the project #ID#",
-                    "show me all components of the project #ID#"
-                ]
-            },
-            "getProjectVersions": {
-                "x-nl-input-examples": [
-                    "give me the list of version for project #ID#",
-                    "what are the versions of the project #ID#",
-                    "show me all versions of project #ID#"
-                ]
-            },
-            "getRecent": {
-                "x-nl-input-examples": [
-                    "show me my last projects",
-                    "give me my list of my last projects",
-                    "show me the list of last projects viewed"
-                ]
-            },
-            "getUsersFromGroup": {
-                "x-nl-input-examples": [
-                    "give me the list of users of group #ID#",
-                    "what are the users of group #ID#",
-                    "give the users of group #ID#. return page #NB#, #NB# users per page, please",
-                    "list the 5 first users of group #ID#",
-                    "return users on page #NB# for group #ID#. Put #NB# items per page"
-                ]
-            },
-            "getVersion": {
-                "x-nl-input-examples": [
-                    "show me details of the version #ID# of the project #ID#",
-                    "give me the description of the version #ID# of the project #ID#",
-                    "on the project #ID#, give me details of the version #ID#",
-                    "give me the status of the version #ID# on the project #ID#",
-                    "what is the release date of the version #ID# of the project #ID#"
-                ]
-            },
-            "movePriorities": {
-                "x-nl-input-examples": [
-                    "move priority #ID# after #ID#",
-                    "move priority #ID# before #ID#"
-                ]
-            },
-            "removeGroup": {
-                "x-nl-input-examples": [
-                    "delete the group of users named #NAMED#",
-                    "delete users group #NAMED#",
-                    "remove the group #NAMED#"
-                ]
-            },
-            "removeUserFromGroup": {
-                "x-nl-input-examples": [
-                    "remove user #ID# from group #ID#",
-                    "user #ID# is not any more part of group #ID#"
-                ]
-            },
-            "searchForIssuesUsingJql": {
-                "x-nl-input-examples": [
-                    "give me issues for project #NAME#",
-					"give me the list of issues for project #NAME#",
-                    "show me the list of open issues for project #NAME#",
-                    "I want to see issues for project #NAME#, with only name and description fields",
-					"what is the list of current issues for project #NAME#",
-					"what is the opened issues for project #NAME#"
-                ]
-            },
-            "searchProjects": {
-                "x-nl-input-examples": [
-                    "show me projects with status #status#",
-                    "give me list of projects with ",
-                    "return project from page #NB#, with #NB# items per page"
-                ]
-            },
-            "setDefaultPriority": {
-                "x-nl-input-examples": [
-                    "set the default priority to #ID#"
-                ]
-            },
-            "updateComponent": {
-                "x-nl-input-examples": [
-                    "update name of component #ID# to '#NAME#'",
-                    "update description of component #ID# to '#DESCRIPTION#'",
-                    "update component #ID# and set description to '#DESCRIPTION#'",
-                    "update component #ID# with assignee type #TYPE#, description '#DESCRIPTION#', lead account id #ID# and name '#NAME#'"
-                ]
-            },
-            "updateDashboard": {
-                "x-nl-input-examples": [
-                    "update name of dashboard #ID# to #NAME#",
-                    "update dashboard #ID# with name=#NAME#, description=#DESCRIPTION# and type=global",
-                    "change type of dashboard #ID# to 'global'",
-                    "change name of dashboard #ID# to #NAME#"
-                ]
-            },
-            "updateIssueType": {
-                "x-nl-input-examples": [
-                    "update issue type #ID# with new name #NAME# and description #DESCRIPTION#",
-                    "update name of issue type #ID# to #NAME#",
-                    "update description of issue type #ID# to #description#"
-                ]
-            },
-            "updateProject": {
-                "x-nl-input-examples": [
-                    "update description of project #ID# to #description#",
-                    "update name of project #ID# to #NAME#",
-                    "change name and description of project #ID# to #NAME# and '#DESCRIPTION'"
-                ]
-            },
-            "updateVersion": {
-                "x-nl-input-examples": [
-                    "update name of version #ID# of the project #ID# to #NAME#",
-                    "change the description of the version #ID# of the project #ID# to '#DESCRIPTION#'",
-                    "update the release date of the version #ID# of the project #ID# to #DATE#",
-                    "change the status of the version #ID# of the project #ID# to #STATUS#"
-                ]
-            }
-        },
-        "selectModelEmbedding": "MiniLM-L6-v2.Q8_0.gguf",
-        "selectModelsPath": "../tyk-release-v5.8.0-alpha8/models",
-        "llmConfig": {
-            "AzureConfig": {
-                "openAIKey": "xxx",
-                "modelDeployment": "gpt-4o-mini"
-            }
-        },
-        "APIID": "tyk-jira-id"
-    },
     "tyk-gmail-id": {
         "azureConfig": {
             "openAIKey": "xxx",
@@ -628,55 +207,85 @@
           "gmail.users.drafts.create": {
             "x-nl-input-examples": [
               "Creates a new draft",
-              "Creates a new draft with the `DRAFT` label."
+              "Creates a new draft with the label.",
+			  "Add a new draft on my mailbox with subject "
             ]
           },
           "gmail.users.drafts.delete": {
             "x-nl-input-examples": [
-              "deletes the draft"
+              "deletes the draft",
+              "deletes the draft from my mailbox",
+			  "remove the draft",
+			  "remove the draft with id from my mailbox"
             ]
           },
           "gmail.users.drafts.get": {
             "x-nl-input-examples": [
-              "gets the draft"
+              "gets the draft",
+			  "show me details of draft",
+			  "show me details of draft on my mailbox",
+			  "give me details of draft",
+			  "give me details of draft on my mailbox"
             ]
           },
           "gmail.users.drafts.list": {
             "x-nl-input-examples": [
+              "give me a list of drafts of my drafts",
               "give me the list of drafts in my mailbox",
               "show me the list of drafts",
+			  "show me my drafts",
+			  "show me my drafts in my mailbox",
+			  "what is the list of my drafts?",
+			  "what is the list of my draft currently on my mailbox?",
+			  "show me the list of my current draft",
               "search for drafts with"
             ]
           },
           "gmail.users.drafts.send": {
             "x-nl-input-examples": [
+			  "Send my draft with id to ",
+			  "Take the draft and send it to ",
               "Sends the specified, existing draft to the recipients in the `To`, `Cc`, and `Bcc` headers."
             ]
           },
           "gmail.users.drafts.update": {
             "x-nl-input-examples": [
-              "updates the draft content to"
+              "updates the draft content to",
+			  "update my draft with content",
+			  "set content of my draft to",
+			  "change content of draft to"
             ]
           },
           "gmail.users.history.list": {
             "x-nl-input-examples": [
-              "Lists the history of all changes to the given mailbox"
+              "Lists the history of all changes to the given mailbox",
+			  "give me the history of my mailbox",
+			  "what is the history of my mailbox"
             ]
           },
           "gmail.users.labels.create": {
             "x-nl-input-examples": [
-              "Creates a new label on my mailbox"
+              "Creates a new label on my mailbox",
+			  "create a new label with name",
+			  "create a new label named on my mailbox",
+			  "add a label with name",
+			  "add a new label with name on my mailbox"
             ]
           },
           "gmail.users.labels.delete": {
             "x-nl-input-examples": [
-              "Delete the label with the ID"
+              "Delete the label with the ID",
+			  "Delete the label from my mailbox",
+			  "remove the label",
+			  "remove the label with id from my mailbox"
             ]
           },
           "gmail.users.labels.get": {
             "x-nl-input-examples": [
-              "get the labels",
-              "give me the list of all labels on my mailbox"
+              "give me the label with id",
+			  "give me the label on my mailbox",
+			  "show me details of the label",
+			  "show me details of the label on my mailbox"
             ]
           },
           "gmail.users.labels.list": {
@@ -686,25 +295,32 @@
               "show me all labels"
             ]
           },
+          "gmail.users.labels.update": {
+            "x-nl-input-examples": [
+              "update label with name=",
+			  "change name of label to",
+			  "update the name of the label to",
+			  "on my mailbox, I want to update the label",
+			  "update the visibility of my label to",
+			  "update the color of my label to"
+            ]
+          },
           "gmail.users.messages.delete": {
             "x-nl-input-examples": [
               "delete the message with id",
-              "remove the message with id"
+              "delete the message with id from my mailbox",
+              "remove the message with id",
+			  "remove the message with id from my mailbox"
             ]
           },
           "gmail.users.messages.get": {
             "x-nl-input-examples": [
               "give me details of the message with id",
+			  "show me my message",
+			  "show me my message with id",
+			  "show me message with id from my mailbox",
               "show me the message with id",
               "show me the message with id in full format"
-            ]
-          },
-          "gmail.users.messages.insert": {
-            "x-nl-input-examples": [
-              "Send a message with the subject to",
-              "Send a message to me including a joke. Please use emojis inside it.",
-              "Write a reminder to myself to buy milk at 5pm.",
-              "Insert a message into my mailbox about the meeting at 3pm."
             ]
           },
           "gmail.users.messages.list": {
@@ -715,11 +331,48 @@
               "show me all my messages with"
             ]
           },
+          "gmail.users.messages.modify": {
+            "x-nl-input-examples": [
+              "update message and add labels",
+			  "update message with id and remove label",
+			  "add label on message",
+			  "add label on message with id",
+			  "remove label from message",
+			  "remove label from message with id"
+            ]
+          },
           "gmail.users.messages.send": {
             "x-nl-input-examples": [
-              "Send an email to 'test@example.com' including a joke. Please use emojis inside it.",
+              "Send an email to ",
+			  "send an email to with subject  ",
+			  "send an email with subject to ",
+			  "send a message to with subject. The content of the message must be",
+			  "write an email to with subject ",
+			  "write an email to with subject with content ",
+			  "write a message to with subject with content ",
+			  "write an email to ",
+			  "write an email to the subject must be, and the content",
               "Tell to 'test@example.com' that his new car is available.",
-              "Write a profesional email to reject the candidate 'John Doe \u003ctest@example.com'"
+              "Write a professional email to reject the candidate 'John Doe \u003ctest@example.com'"
+            ]
+          },
+          "gmail.users.messages.trash": {
+            "x-nl-input-examples": [
+              "move the message to the trash",
+			  "move the message with id to the trash",
+			  "move to the trash the message"
+            ]
+          },
+          "gmail.users.messages.untrash": {
+            "x-nl-input-examples": [
+              "remove the message from the trash",
+			  "remove the message with id from the trash",
+			  "remove from the trash the message"
+            ]
+          },
+          "gmail.users.messages.attachments.get": {
+            "x-nl-input-examples": [
+              "gets attachment from message"
             ]
           },
           "gmail.users.threads.list": {
