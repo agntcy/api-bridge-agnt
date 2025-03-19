@@ -54,7 +54,11 @@ func loadApiSpecsForTests(apiId string, specFilename string) (*PluginDataConfig,
 	}
 
 	var result map[string]interface{}
-	json.Unmarshal([]byte(byteValue), &result)
+	err = json.Unmarshal([]byte(byteValue), &result)
+	if err != nil {
+		return nil, fmt.Errorf("can't unmarshal file %s: %s", specFilename, err)
+	}
+
 	for _, pathData := range result["paths"].(map[string]interface{}) {
 		for method, methodData := range pathData.(map[string]interface{}) {
 			if slices.Contains([]string{"get", "post", "put", "patch", "delete"}, method) {
@@ -122,7 +126,10 @@ func loadRequestToTest(filename string) ([]EndpointSelectionTestingRequests, err
 	}
 	defer file.Close()
 	byteValue, _ := io.ReadAll(file)
-	json.Unmarshal(byteValue, &tests)
+	err = json.Unmarshal(byteValue, &tests)
+	if err != nil {
+		return tests, fmt.Errorf("can't unmarshal file %s: %s", filename, err)
+	}
 	return tests, nil
 }
 
