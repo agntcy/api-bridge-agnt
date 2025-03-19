@@ -1,5 +1,11 @@
 [
   {
+    "api_id": "tyk-sendgrid-id",
+    "query": "Please send a message from me (agntcy.demo@gmail.com) to John Smith john.smith@cisco.com. Please use content-type application/json. The content of the email should be 'Dear John,\n\nI hope this message finds you well. We are excited to announce an exclusive offer from GIC, your trusted brand for stylish and sustainable clothing. This March, we are celebrating the vibrant spirit of spring with a special 20% discount on all our green clothing items.\n\nOur green collection embodies the perfect blend of fashion and eco-consciousness, designed to make you look and feel your best. Whether you're refreshing your wardrobe or looking for that perfect statement piece, GIC has something for everyone.\n\nDon't miss out on this opportunity to embrace the season's colors while enjoying significant savings. Visit our website or your nearest GIC store to explore the collection and take advantage of this limited-time offer.\n\nThank you for being a valued part of the GIC community. We look forward to seeing you in our latest styles.\n\nWarm regards,\n\nAgentcy  \nYour friend  \nGIC Clothing",
+    "expected": "SendMail",
+    "reach_threshold": true
+  },
+  {
     "api_id": "tyk-github-id",
     "query": "Give me the list of pull requests for repository 'cisco/myproject'",
     "expected": "pulls/list",
