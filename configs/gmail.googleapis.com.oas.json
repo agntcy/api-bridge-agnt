@@ -2034,11 +2034,11 @@
           "users"
         ],
         "x-nl-input-examples": [
-          "Send a message with the subject to",
-          "Send a message to me including a joke. Please use emojis inside it.",
+          "Write a message with the subject to",
+          "Write a message to me including a joke. Please use emojis inside it.",
           "Write a reminder to myself to buy milk at 5pm.",
           "Insert a message into my mailbox about the meeting at 3pm."
-        ]
+    ]
       }
     },
     "/gmail/v1/users/{userId}/messages/batchDelete": {

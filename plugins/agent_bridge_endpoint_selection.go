@@ -16,13 +16,15 @@ type QueryEndpointSelectionReply struct {
 	Results []QueryEndpointSelectionMatch `json:"results"`
 }
 
+var NBRESULT = 5
+
 func findSelectOperation(apiId string, input string) (*string, float64, error) {
 	apiSpecIndicesLock.RLock()
 	apiSpecIndex, present := apiSpecIndices[apiId]
 	apiSpecIndicesLock.RUnlock()
 	if !present {
 		// This API has no x-nl-input-examples
-		return nil, 0, nil
+		return nil, 0, fmt.Errorf("no x-nl-input-examples found for api id: %s", apiId)
 	}
 	pluginConfigLock.RLock()
 	pluginDataConfig, present := pluginConfig[apiId]
@@ -40,10 +42,15 @@ func findSelectOperation(apiId string, input string) (*string, float64, error) {
 	if err != nil {
 		return nil, 0, err
 	}
-	results := apiSpecIndex.Search(embedding, 1)
+	results := apiSpecIndex.Search(embedding, NBRESULT)
 	if len(results) < 1 {
 		return nil, 0, nil
 	} else {
+		if NBRESULT > 1 {
+			for index, result := range results {
+				logger.Errorf("Result %d: %v / %v\n", index, result.Value, result.Relevance)
+			}
+		}
 		return &results[0].Value, results[0].Relevance, nil
 	}
 }

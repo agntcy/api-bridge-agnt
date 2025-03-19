@@ -124,6 +124,11 @@ ifeq (,$(wildcard ./tyk-release-$(TYK_VERSION)/models/paraphrase-multilingual-mp
 	mkdir -p "tyk-release-$(TYK_VERSION)/models"
 	curl -L 'https://huggingface.co/sizrox/paraphrase-multilingual-mpnet-base-v2-Q8_0-GGUF/resolve/main/paraphrase-multilingual-mpnet-base-v2-q8_0.gguf' -o "tyk-release-$(TYK_VERSION)/models/paraphrase-multilingual-mpnet-base-v2-q8_0.gguf"
 endif
+ifeq (,$(wildcard ./tyk-release-$(TYK_VERSION)/models/jina-embeddings-v2-base-en-q5_k_m.gguf))
+	mkdir -p "tyk-release-$(TYK_VERSION)/models"
+	curl -L 'https://huggingface.co/djuna/jina-embeddings-v2-base-en-Q5_K_M-GGUF/resolve/main/jina-embeddings-v2-base-en-q5_k_m.gguf' -o "tyk-release-$(TYK_VERSION)/models/jina-embeddings-v2-base-en-q5_k_m.gguf"
+endif
+
 
 lint:
 	golangci-lint run --timeout=10m plugins/
