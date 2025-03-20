@@ -30,7 +30,8 @@ func TestBuildOperationString(t *testing.T) {
           }
         }
       }`),
-			"",
+			`{"responses":null}
+`,
 		},
 		{
 			"Simple operation with summary",
@@ -44,7 +45,8 @@ func TestBuildOperationString(t *testing.T) {
           "/test": { "get": { "summary": "The request's query parameters." } }
         }
       }`),
-			"Operation summary: The request's query parameters.\n",
+			`{"responses":null,"summary":"The request's query parameters."}
+`,
 		},
 		{
 			"Simple operation with description",
@@ -58,7 +60,8 @@ func TestBuildOperationString(t *testing.T) {
           "/test": { "get": { "description": "The request's query parameters, with a description." } }
         }
       }`),
-			"Operation description: The request's query parameters, with a description.\n",
+			`{"description":"The request's query parameters, with a description.","responses":null}
+`,
 		},
 		{
 			"Simple operation with description and summary, prefer description",
@@ -72,7 +75,8 @@ func TestBuildOperationString(t *testing.T) {
           "/test": { "get": { "description": "The request's query parameters, with a description.", "summary": "The request's query parameters summary." } }
         }
       }`),
-			"Operation description: The request's query parameters, with a description.\n",
+			`{"description":"The request's query parameters, with a description.","responses":null,"summary":"The request's query parameters summary."}
+`,
 		},
 		{
 			"An operation with a parameter using a $ref",
@@ -144,14 +148,12 @@ func TestBuildOperationString(t *testing.T) {
           }
         }
       }`),
-			`Operation summary: The request's query parameters.
-The list of Parameters:
-- {"in":"query","name":"genre"}
-- {"description":"The age of the person","in":"header","name":"age","schema":{"$ref":"#/components/schemas/age0"}}
-- {"description":"The age of the person","in":"header","name":"name","schema":{"type":"integer"}}
+			`{"parameters":[{"in":"query","name":"genre"},{"$ref":"#/components/parameters/age"},{"$ref":"#/components/parameters/name"}],"responses":null,"summary":"The request's query parameters."}
 The list of References:
+===
 - #/components/schemas/age: {"format":"int32","type":"integer"}
 - #/components/schemas/age0: {"properties":{"age":{"$ref":"#/components/schemas/age"},"romanage":{"type":"string"}},"type":"object"}
+===
 `,
 		},
 		{
@@ -189,14 +191,12 @@ The list of References:
         }
 	  }
 		 `),
-			`Operation summary: The request's query parameters.
-The request body:
-{"content":{"application/json":{"schema":{"properties":{"url":{"type":"string"}},"required":["url"],"type":"object"}}},"required":true}
+			`{"requestBody":{"content":{"application/json":{"schema":{"properties":{"url":{"type":"string"}},"required":["url"],"type":"object"}}},"required":true},"responses":null,"summary":"The request's query parameters."}
 `,
 		},
 		{
-					"Simple operation - params, request body, with $refs ",
-					[]byte(`{
+			"Simple operation - params, request body, with $refs ",
+			[]byte(`{
 				"openapi": "3.0.0",
         "info": {
           "title": "Minimal API",
@@ -286,19 +286,15 @@ The request body:
         }
 	  }
 				 `),
-					`Operation summary: The request's query parameters.
-The list of Parameters:
-- {"in":"query","name":"genre"}
-- {"description":"The age of the person","in":"header","name":"age","schema":{"$ref":"#/components/schemas/age0"}}
-- {"description":"The age of the person","in":"header","name":"name","schema":{"type":"integer"}}
-The request body:
-{"content":{"application/json":{"schema":{"properties":{"age":{"$ref":"#/components/schemas/age"},"city":{"$ref":"#/components/schemas/city"},"url":{"type":"string"}},"required":["url"],"type":"object"}}},"required":true}
+			`{"parameters":[{"in":"query","name":"genre"},{"$ref":"#/components/parameters/age"},{"$ref":"#/components/parameters/name"}],"requestBody":{"content":{"application/json":{"schema":{"properties":{"age":{"$ref":"#/components/schemas/age"},"city":{"$ref":"#/components/schemas/city"},"url":{"type":"string"}},"required":["url"],"type":"object"}}},"required":true},"responses":null,"summary":"The request's query parameters."}
 The list of References:
+===
 - #/components/schemas/age: {"format":"int32","type":"integer"}
 - #/components/schemas/age0: {"properties":{"age":{"$ref":"#/components/schemas/age"},"romanage":{"type":"string"}},"type":"object"}
 - #/components/schemas/city: {"type":"string"}
+===
 `,
-				},
+		},
 	}
 
 	for _, tt := range tests {

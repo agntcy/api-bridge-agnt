@@ -274,42 +274,26 @@ func buildOperationString(operation *openapi3.Operation) (string, error) {
 
 	var sb strings.Builder
 
-	if operation.Description != "" {
-		fmt.Fprintf(&sb, "Operation description: %s\n", operation.Description)
-	} else if operation.Summary != "" {
-		fmt.Fprintf(&sb, "Operation summary: %s\n", operation.Summary)
+
+	operationString, err := operation.MarshalJSON()
+	if err != nil {
+		return "", err
 	}
+
+	sb.Write(operationString)
+	sb.WriteString("\n")
 
 	if len(operation.Parameters) > 0 {
 		getParameterRefs(operation.Parameters, refs)
-
-		sb.WriteString("The list of Parameters:\n")
-		for _, param := range operation.Parameters {
-			if param == nil || param.Value == nil {
-				continue
-			}
-			m, err := param.Value.MarshalJSON()
-			if err != nil {
-				logger.Errorf("[+] Error marshalling parameter: %s", err)
-				return "", err
-			}
-			fmt.Fprintf(&sb, "- %s\n", string(m))
-		}
 	}
 
 	if operation.RequestBody != nil {
 		getRequestBodyRefs(operation.RequestBody.Value, refs)
-		sb.WriteString("The request body:\n")
-		m, err := operation.RequestBody.Value.MarshalJSON()
-		if err != nil {
-			logger.Errorf("[+] Error marshalling request body: %s", err)
-			return "", err
-		}
-		fmt.Fprintf(&sb, "%s\n", string(m))
 	}
 
 	if len(refs) > 0 {
 		sb.WriteString("The list of References:\n")
+		sb.WriteString("===\n")
 
 		// Sort refs
 		sortedRefs := make([]string, 0, len(refs))
@@ -327,6 +311,7 @@ func buildOperationString(operation *openapi3.Operation) (string, error) {
 			}
 			fmt.Fprintf(&sb, "- %s: %s\n", refName, string(m))
 		}
+		sb.WriteString("===\n")
 	}
 
 	return sb.String(), nil
@@ -490,16 +475,17 @@ The OpenAPI operation specification:
 func initResponseTemplates() {
 	var err error
 
-	systemPrompt := `Given a API reponse body, and an instruction from a user. You must convert it to a natural language text, according to the user's request.
+	systemPrompt := `Given a API reponse body, and an instruction from a user.
+You must convert the API Response body to a natural language text.
+Format the API response according to the original user's request.`
 
-The API response body:
+	userPrompt := `
+The API response:
 ====
 {{.ResponseBody}}
 ====
-`
 
-	userPrompt := `The user's request:
-
+The user's request:
 ====
 {{.UserRequest}}
 ====
