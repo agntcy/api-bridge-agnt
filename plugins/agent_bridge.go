@@ -184,7 +184,7 @@ func RewriteResponseToNl(rw http.ResponseWriter, res *http.Response, req *http.R
 		res.Header.Del("Content-Encoding")
 	}
 
-	naturalLanguageResponse, err := responseToNL(req, string(bodyBytes))
+	naturalLanguageResponse, err := responseToNL(req, fmt.Sprintf("%s %s", res.Status, string(bodyBytes)))
 	if err != nil {
 		logger.Errorf("[+] Error while converting the response to Natural Language: %s", err)
 		http.Error(rw, INTERNAL_ERROR_MSG, http.StatusInternalServerError)
