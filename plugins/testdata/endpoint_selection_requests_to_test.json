@@ -1,0 +1,410 @@
+[
+  {
+    "api_id": "tyk-sendgrid-id",
+    "query": "Please send a message from me (agntcy.demo@gmail.com) to John Smith john.smith@example.com. Please use content-type application/json. The content of the email should be 'Dear John,\n\nI hope this message finds you well. We are excited to announce an exclusive offer from GIC, your trusted brand for stylish and sustainable clothing. This March, we are celebrating the vibrant spirit of spring with a special 20% discount on all our green clothing items.\n\nOur green collection embodies the perfect blend of fashion and eco-consciousness, designed to make you look and feel your best. Whether you're refreshing your wardrobe or looking for that perfect statement piece, GIC has something for everyone.\n\nDon't miss out on this opportunity to embrace the season's colors while enjoying significant savings. Visit our website or your nearest GIC store to explore the collection and take advantage of this limited-time offer.\n\nThank you for being a valued part of the GIC community. We look forward to seeing you in our latest styles.\n\nWarm regards,\n\nAgentcy  \nYour friend  \nGIC Clothing",
+    "expected": "SendMail",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-github-id",
+    "query": "Give me the list of pull requests for repository 'agntcy/myproject'",
+    "expected": "pulls/list",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-github-id",
+    "query": "what is the list of all tags for repository 'agntcy/myproject'",
+    "expected": "repos/list-tags",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-github-id",
+    "query": "give me the list of all releases of the repository 'agntcy/myproject'",
+    "expected": "repos/list-releases",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-github-id",
+    "query": "show me the details for the release 250 of the repository 'agntcy/myproject'",
+    "expected": "repos/get-release",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-github-id",
+    "query": "change the name of the release 250 of the repository 'agntcy/myproject' to 'v1.0.0'",
+    "expected": "repos/update-release",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-github-id",
+    "query": "update the draft status of the release 250 of the repository 'agntcy/myproject' to False",
+    "expected": "repos/update-release",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-github-id",
+    "query": "delete the release 250 on repository 'agntcy/myproject'",
+    "expected": "repos/delete-release",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-github-id",
+    "query": "show me the readme on repository 'agntcy/myproject'",
+    "expected": "repos/get-readme",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-github-id",
+    "query": "show me all comments on the PR #214 on repository 'agntcy/myproject'",
+    "expected": "pulls/list-review-comments",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-github-id",
+    "query": "show me details for the PR #214 on repository 'agntcy/myproject'",
+    "expected": "pulls/get",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-github-id",
+    "query": "Add a new comment 'I'm not sure about this part of the code, line 298' for pull request #214 on repository 'agntcy/myproject'",
+    "expected": "pulls/create-review-comment",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-github-id",
+    "query": "change the state of the PR #214 to 'closed' on repository 'agntcy/myproject'",
+    "expected": "pulls/update",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-github-id",
+    "query": "close the PR #214 on repository 'agntcy/myproject'",
+    "expected": "pulls/update",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-github-id",
+    "query": "show me all comments for the issue '123456789' on repository 'agntcy/myproject'",
+    "expected": "issues/list-comments",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-github-id",
+    "query": "show me all comments for repository 'agntcy/myproject'",
+    "expected": "issues/list-comments-for-repo",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-github-id",
+    "query": "show me details of the issue '123456789' on repository 'agntcy/myproject'",
+    "expected": "issues/get",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-github-id",
+    "query": "show me details of the issue '123456789' on repository 'agntcy/myproject'",
+    "expected": "issues/get",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-github-id",
+    "query": "change the title issue '123456789' to 'bug on the server'",
+    "expected": "issues/update",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-github-id",
+    "query": "Add label 'bug' to issue '123456789' of repository 'MYPROJECT'",
+    "expected": "issues/add-labels",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-github-id",
+    "query": "add user 'john.smith' to assignees for project 'MYPROJECT'",
+    "expected": "issues/add-assignees",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-github-id",
+    "query": "remove user 'john.smith' from assignees for project 'MYPROJECT'",
+    "expected": "issues/remove-assignees",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-github-id",
+    "query": "Give me the 5 last issues on repo tyk owned by TykTechnologies.",
+    "expected": "issues/list-for-repo",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-github-id",
+    "query": "Give me the 5 last issues on repo apiclarity owned by thelasttoto",
+    "expected": "issues/list-for-repo",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-github-id",
+    "query": "Give me the 5 last commits on repo tyk owned by TykTechnologies.",
+    "expected": "repos/list-commits",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-github-id",
+    "query": "Give me the 5 last commits on repo apiclarity owned by thelasttoto",
+    "expected": "repos/list-commits",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-github-id",
+    "query": "Create a bug ",
+    "expected": "issues/create",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-github-id",
+    "query": "Create a bug in the repo 'thelasttoto/apiclarity'",
+    "expected": "issues/create",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-github-id",
+    "query": "Create a bug in the repo 'thelasttoto/apiclarity' about apiclarity crashing when compiled for linux, and assign it to user thelasttoto",
+    "expected": "issues/create",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-github-id",
+    "query": "Donnes moi les 5 derniers commits du repo apiclarity de thelasttoto",
+    "expected": "repos/list-commits",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-github-id",
+    "query": "Donnes moi les 5 derniers problemes du repo apiclarity de thelasttoto",
+    "expected": "issues/list-for-repo",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-jira-id",
+    "query": "what are the last issues of project PUCCINI",
+    "expected": "searchForIssuesUsingJql",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-jira-id",
+    "query": "I want to create an issue on project PUCCINI with description 'this is a test issue'",
+    "expected": "createIssue",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-gmail-id",
+    "query": "I want to create a new draft with label 'DRAFT', subject 'test' and body 'this is a test'",
+    "expected": "gmail.users.drafts.create",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-gmail-id",
+    "query": "what is the details of draft with id '123456789'",
+    "expected": "gmail.users.drafts.get",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-gmail-id",
+    "query": "show me content of draft with id '123456789'",
+    "expected": "gmail.users.drafts.get",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-gmail-id",
+    "query": "delete draft with id '123456789'",
+    "expected": "gmail.users.drafts.delete",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-gmail-id",
+    "query": "delete draft with id '123456789' from my mailbox",
+    "expected": "gmail.users.drafts.delete",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-gmail-id",
+    "query": "give me the list of my drafts currently on lmy mailbox",
+    "expected": "gmail.users.drafts.list",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-gmail-id",
+    "query": "show me all my drafts",
+    "expected": "gmail.users.drafts.list",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-gmail-id",
+    "query": "take my draft '13456789' and send it to 'john.smith@unkdomain.com'",
+    "expected": "gmail.users.drafts.send",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-gmail-id",
+    "query": "send the draft with id '13456789' to 'john.smith@unkdomain.com'",
+    "expected": "gmail.users.drafts.send",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-gmail-id",
+    "query": "create a new label with name 'PERSONAL'",
+    "expected": "gmail.users.labels.create",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-gmail-id",
+    "query": "create a new label with name 'PERSONAL' on my mailbox",
+    "expected": "gmail.users.labels.create",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-gmail-id",
+    "query": "add a label 'TEST' on my mailbox",
+    "expected": "gmail.users.labels.create",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-gmail-id",
+    "query": "add a new user label 'TEST' on my mailbox",
+    "expected": "gmail.users.labels.create",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-gmail-id",
+    "query": "delete label 'TEST' from my mailbox",
+    "expected": "gmail.users.labels.delete",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-gmail-id",
+    "query": "give me the list of all labels presents on my mailbox",
+    "expected": "gmail.users.labels.list",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-gmail-id",
+    "query": "change the name of the label 'TEST' to 'DRAFT'",
+    "expected": "gmail.users.labels.update",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-gmail-id",
+    "query": "update name of the label with ID 'TEST' to 'DRAFT'",
+    "expected": "gmail.users.labels.update",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-gmail-id",
+    "query": "update visibility of label 'TEST' to 'labelHide'",
+    "expected": "gmail.users.labels.update",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-gmail-id",
+    "query": "delete the message about 'test' from my mailbox",
+    "expected": "gmail.users.messages.delete",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-gmail-id",
+    "query": "delete the message '123456789'' from my mailbox",
+    "expected": "gmail.users.messages.delete",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-gmail-id",
+    "query": "I want to send an email to 'john.smith@unkdomain.com' with subject 'test' and body 'Hello my friends. I receive your message, I'm agree with your opinion, we will fix that ASAP. Best Regards'",
+    "expected": "gmail.users.messages.send",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-gmail-id",
+    "query": "Send an email to 'john.smith@unkdomain.com' with subject 'test' and body 'Hello my friends. I receive your message, I'm agree with your opinion, we will fix that ASAP. Best Regards'",
+    "expected": "gmail.users.messages.send",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-gmail-id",
+    "query": "Please, send an email to 'john.smith@unkdomain.com' with subject 'test' and body 'Hello my friends. I receive your message, I'm agree with your opinion, we will fix that ASAP. Best Regards'",
+    "expected": "gmail.users.messages.send",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-gmail-id",
+    "query": "I want to send a message to 'john.smith@unkdomain.com' with subject 'test' and body 'Hello my friends. I receive your message, I'm agree with your opinion, we will fix that ASAP. Best Regards'",
+    "expected": "gmail.users.messages.send",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-gmail-id",
+    "query": "write an email to 'john.smith@unkdomain.com' with subject 'test' to agree with the schedule of the meeting.",
+    "expected": "gmail.users.messages.send",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-gmail-id",
+    "query": "send an email to 'john.smith@unkdomain.com' with subject 'test' to agree with the schedule of the meeting.",
+    "expected": "gmail.users.messages.send",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-gmail-id",
+    "query": "give me the 5 last messages on my mailbox",
+    "expected": "gmail.users.messages.list",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-gmail-id",
+    "query": "delete the message with id '123456789'",
+    "expected": "gmail.users.messages.delete",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-gmail-id",
+    "query": "delete the email with id '123456789' from my mailbox",
+    "expected": "gmail.users.messages.delete",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-gmail-id",
+    "query": "give me details of message '123456789' from my mailbox",
+    "expected": "gmail.users.messages.get",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-gmail-id",
+    "query": "move message '123456789' to the trash",
+    "expected": "gmail.users.messages.trash",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-gmail-id",
+    "query": "I want to move the message '123456789' to the trash",
+    "expected": "gmail.users.messages.trash",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-gmail-id",
+    "query": "remove the message '123456789' from the trash",
+    "expected": "gmail.users.messages.untrash",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-gmail-id",
+    "query": "I want to get the attachment from message '123456789'",
+    "expected": "gmail.users.messages.attachments.get",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-gmail-id",
+    "query": "show me my message '123456789'",
+    "expected": "gmail.users.messages.get",
+    "reach_threshold": true
+  }
+]

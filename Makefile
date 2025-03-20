@@ -120,7 +120,12 @@ test_plugin_select: configs/httpbin.org.api-selection.json tyk-release-$(TYK_VER
 	curl -vv 'http://localhost:8080/httpbin_select/?query=I%20would%20like%20an%20XML%20response.' --header 'Content-Type: text/plain'
 
 download_models_for_semrouter:
-ifeq (,$(wildcard ./tyk-release-$(TYK_VERSION)/models/paraphrase-multilingual-mpnet-base-v2-q8_0.gguf))
+ifeq (,$(wildcard ./tyk-release-$(TYK_VERSION)/models/jina-embeddings-v2-base-en-q5_k_m.gguf))
 	mkdir -p "tyk-release-$(TYK_VERSION)/models"
-	curl -L 'https://huggingface.co/sizrox/paraphrase-multilingual-mpnet-base-v2-Q8_0-GGUF/resolve/main/paraphrase-multilingual-mpnet-base-v2-q8_0.gguf' -o "tyk-release-$(TYK_VERSION)/models/paraphrase-multilingual-mpnet-base-v2-q8_0.gguf"
+	curl -L 'https://huggingface.co/djuna/jina-embeddings-v2-base-en-Q5_K_M-GGUF/resolve/main/jina-embeddings-v2-base-en-q5_k_m.gguf' -o "tyk-release-$(TYK_VERSION)/models/jina-embeddings-v2-base-en-q5_k_m.gguf"
 endif
+
+
+lint:
+	golangci-lint run --timeout=10m plugins/
+	

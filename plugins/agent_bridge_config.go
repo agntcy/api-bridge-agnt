@@ -19,9 +19,11 @@ const (
 	SPEC_EXT_AI_INPUT_EXAMPLES = "x-nl-input-examples"
 
 	DEFAULT_MODEL_EMBEDDINGS_PATH  = "models"
-	DEFAULT_MODEL_EMBEDDINGS_MODEL = "paraphrase-multilingual-mpnet-base-v2-q8_0.gguf"
+	DEFAULT_MODEL_EMBEDDINGS_MODEL = "jina-embeddings-v2-base-en-q5_k_m.gguf"
 	DEFAULT_OPENAI_ENDPOINT        = "https://api.openai.com/v1"
 	DEFAULT_OPENAI_MODEL           = "gpt-4o-mini"
+
+	MAX_UTERANCE_LENGTH = 1500
 )
 
 type AzureConfig struct {
@@ -290,6 +292,10 @@ func initSelectOperations(apiId string, pluginDataConfig *PluginDataConfig) erro
 	apiSpecIndex := search.NewIndex[string]()
 	for apiOperation, aiExtension := range pluginDataConfig.SelectOperations {
 		for _, example := range aiExtension.InputExamples {
+			if len(example) > MAX_UTERANCE_LENGTH {
+				logger.Warningf("[+] example too long: %s", example)
+				continue
+			}
 			embedding, err := modelEmbedder.EmbedText(example)
 			if err != nil {
 				logger.Warningf("[+] embedding model %s failed for text \"%s\": %s", pluginDataConfig.SelectModelEmbedding, example, err)

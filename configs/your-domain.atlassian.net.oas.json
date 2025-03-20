@@ -18367,13 +18367,7 @@
             "state": "Beta"
           }
         ],
-        "x-atlassian-connect-scope": "READ",
-        "x-nl-input-examples": [
-          "I want to see the BRIDGE-140 issue. Only show me the description",
-          "What is the current priority of Jira issue JIRA-67890?",
-          "What is the due date for Jira issue JIRA-11223?",
-          "Is there an attachment on Jira issue JIRA-77889?"
-        ]
+        "x-atlassian-connect-scope": "READ"
       },
       "put": {
         "deprecated": false,
