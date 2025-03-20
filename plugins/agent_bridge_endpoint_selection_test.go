@@ -28,7 +28,7 @@ var SpecToTests = []struct {
 	specFilename string
 }{
 	{"tyk-gmail-id", "../configs/gmail.googleapis.com.oas.json"},
-	{"tyk-jira-id", "../configs/cisco-eti.atlassian.net.oas.json"},
+	{"tyk-jira-id", "../configs/your-domain.atlassian.net.oas.json"},
 	{"tyk-github-id", "../configs/api.github.com.gist.deref.oas.json"},
 	{"tyk-sendgrid-id", "../configs/api.sendgrid.com.oas.json"},
 }
