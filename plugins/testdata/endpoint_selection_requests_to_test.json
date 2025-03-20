@@ -1,109 +1,109 @@
 [
   {
     "api_id": "tyk-sendgrid-id",
-    "query": "Please send a message from me (agntcy.demo@gmail.com) to John Smith john.smith@cisco.com. Please use content-type application/json. The content of the email should be 'Dear John,\n\nI hope this message finds you well. We are excited to announce an exclusive offer from GIC, your trusted brand for stylish and sustainable clothing. This March, we are celebrating the vibrant spirit of spring with a special 20% discount on all our green clothing items.\n\nOur green collection embodies the perfect blend of fashion and eco-consciousness, designed to make you look and feel your best. Whether you're refreshing your wardrobe or looking for that perfect statement piece, GIC has something for everyone.\n\nDon't miss out on this opportunity to embrace the season's colors while enjoying significant savings. Visit our website or your nearest GIC store to explore the collection and take advantage of this limited-time offer.\n\nThank you for being a valued part of the GIC community. We look forward to seeing you in our latest styles.\n\nWarm regards,\n\nAgentcy  \nYour friend  \nGIC Clothing",
+    "query": "Please send a message from me (agntcy.demo@gmail.com) to John Smith john.smith@example.com. Please use content-type application/json. The content of the email should be 'Dear John,\n\nI hope this message finds you well. We are excited to announce an exclusive offer from GIC, your trusted brand for stylish and sustainable clothing. This March, we are celebrating the vibrant spirit of spring with a special 20% discount on all our green clothing items.\n\nOur green collection embodies the perfect blend of fashion and eco-consciousness, designed to make you look and feel your best. Whether you're refreshing your wardrobe or looking for that perfect statement piece, GIC has something for everyone.\n\nDon't miss out on this opportunity to embrace the season's colors while enjoying significant savings. Visit our website or your nearest GIC store to explore the collection and take advantage of this limited-time offer.\n\nThank you for being a valued part of the GIC community. We look forward to seeing you in our latest styles.\n\nWarm regards,\n\nAgentcy  \nYour friend  \nGIC Clothing",
     "expected": "SendMail",
     "reach_threshold": true
   },
   {
     "api_id": "tyk-github-id",
-    "query": "Give me the list of pull requests for repository 'cisco/myproject'",
+    "query": "Give me the list of pull requests for repository 'agntcy/myproject'",
     "expected": "pulls/list",
     "reach_threshold": true
   },
   {
     "api_id": "tyk-github-id",
-    "query": "what is the list of all tags for repository 'cisco/myproject'",
+    "query": "what is the list of all tags for repository 'agntcy/myproject'",
     "expected": "repos/list-tags",
     "reach_threshold": true
   },
   {
     "api_id": "tyk-github-id",
-    "query": "give me the list of all releases of the repository 'cisco/myproject'",
+    "query": "give me the list of all releases of the repository 'agntcy/myproject'",
     "expected": "repos/list-releases",
     "reach_threshold": true
   },
   {
     "api_id": "tyk-github-id",
-    "query": "show me the details for the release 250 of the repository 'cisco/myproject'",
+    "query": "show me the details for the release 250 of the repository 'agntcy/myproject'",
     "expected": "repos/get-release",
     "reach_threshold": true
   },
   {
     "api_id": "tyk-github-id",
-    "query": "change the name of the release 250 of the repository 'cisco/myproject' to 'v1.0.0'",
+    "query": "change the name of the release 250 of the repository 'agntcy/myproject' to 'v1.0.0'",
     "expected": "repos/update-release",
     "reach_threshold": true
   },
   {
     "api_id": "tyk-github-id",
-    "query": "update the draft status of the release 250 of the repository 'cisco/myproject' to False",
+    "query": "update the draft status of the release 250 of the repository 'agntcy/myproject' to False",
     "expected": "repos/update-release",
     "reach_threshold": true
   },
   {
     "api_id": "tyk-github-id",
-    "query": "delete the release 250 on repository 'cisco/myproject'",
+    "query": "delete the release 250 on repository 'agntcy/myproject'",
     "expected": "repos/delete-release",
     "reach_threshold": true
   },
   {
     "api_id": "tyk-github-id",
-    "query": "show me the readme on repository 'cisco/myproject'",
+    "query": "show me the readme on repository 'agntcy/myproject'",
     "expected": "repos/get-readme",
     "reach_threshold": true
   },
   {
     "api_id": "tyk-github-id",
-    "query": "show me all comments on the PR #214 on repository 'cisco/myproject'",
+    "query": "show me all comments on the PR #214 on repository 'agntcy/myproject'",
     "expected": "pulls/list-review-comments",
     "reach_threshold": true
   },
   {
     "api_id": "tyk-github-id",
-    "query": "show me details for the PR #214 on repository 'cisco/myproject'",
+    "query": "show me details for the PR #214 on repository 'agntcy/myproject'",
     "expected": "pulls/get",
     "reach_threshold": true
   },
   {
     "api_id": "tyk-github-id",
-    "query": "Add a new comment 'I'm not sure about this part of the code, line 298' for pull request #214 on repository 'cisco/myproject'",
+    "query": "Add a new comment 'I'm not sure about this part of the code, line 298' for pull request #214 on repository 'agntcy/myproject'",
     "expected": "pulls/create-review-comment",
     "reach_threshold": true
   },
   {
     "api_id": "tyk-github-id",
-    "query": "change the state of the PR #214 to 'closed' on repository 'cisco/myproject'",
+    "query": "change the state of the PR #214 to 'closed' on repository 'agntcy/myproject'",
     "expected": "pulls/update",
     "reach_threshold": true
   },
   {
     "api_id": "tyk-github-id",
-    "query": "close the PR #214 on repository 'cisco/myproject'",
+    "query": "close the PR #214 on repository 'agntcy/myproject'",
     "expected": "pulls/update",
     "reach_threshold": true
   },
   {
     "api_id": "tyk-github-id",
-    "query": "show me all comments for the issue '123456789' on repository 'cisco/myproject'",
+    "query": "show me all comments for the issue '123456789' on repository 'agntcy/myproject'",
     "expected": "issues/list-comments",
     "reach_threshold": true
   },
   {
     "api_id": "tyk-github-id",
-    "query": "show me all comments for repository 'cisco/myproject'",
+    "query": "show me all comments for repository 'agntcy/myproject'",
     "expected": "issues/list-comments-for-repo",
     "reach_threshold": true
   },
   {
     "api_id": "tyk-github-id",
-    "query": "show me details of the issue '123456789' on repository 'cisco/myproject'",
+    "query": "show me details of the issue '123456789' on repository 'agntcy/myproject'",
     "expected": "issues/get",
     "reach_threshold": true
   },
   {
     "api_id": "tyk-github-id",
-    "query": "show me details of the issue '123456789' on repository 'cisco/myproject'",
+    "query": "show me details of the issue '123456789' on repository 'agntcy/myproject'",
     "expected": "issues/get",
     "reach_threshold": true
   },

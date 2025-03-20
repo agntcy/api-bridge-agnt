@@ -5,6 +5,8 @@ package main
 
 import "fmt"
 
+const NBRESULT = 1
+
 type QueryEndpointSelectionMatch struct {
 	Query       string  `json:"query"`
 	OperationId string  `json:"operationId,omitempty"`
@@ -15,8 +17,6 @@ type QueryEndpointSelectionMatch struct {
 type QueryEndpointSelectionReply struct {
 	Results []QueryEndpointSelectionMatch `json:"results"`
 }
-
-var NBRESULT = 5
 
 func findSelectOperation(apiId string, input string) (*string, float64, error) {
 	apiSpecIndicesLock.RLock()
@@ -48,7 +48,7 @@ func findSelectOperation(apiId string, input string) (*string, float64, error) {
 	} else {
 		if NBRESULT > 1 {
 			for index, result := range results {
-				logger.Errorf("Result %d: %v / %v\n", index, result.Value, result.Relevance)
+				logger.Debugf("Result %d: %v / %v\n", index, result.Value, result.Relevance)
 			}
 		}
 		return &results[0].Value, results[0].Relevance, nil

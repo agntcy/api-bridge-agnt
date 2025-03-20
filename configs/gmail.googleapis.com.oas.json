@@ -624,8 +624,8 @@
           "users"
         ],
         "x-nl-input-examples": [
-          "Send my draft with id to ",
-          "Take the draft and send it to ",
+          "Send my draft with id to",
+          "Take the draft and send it to",
           "Sends the specified, existing draft to the recipients in the `To`, `Cc`, and `Bcc` headers."
         ]
       }
@@ -2652,17 +2652,17 @@
           "users"
         ],
         "x-nl-input-examples": [
-          "Send an email to ",
-          "send an email to with subject  ",
-          "send an email with subject to ",
+          "Send an email to",
+          "send an email to with subject",
+          "send an email with subject to",
           "send a message to with subject. The content of the message must be",
-          "write an email to with subject ",
-          "write an email to with subject with content ",
-          "write a message to with subject with content ",
-          "write an email to ",
+          "write an email to with subject",
+          "write an email to with subject with content",
+          "write a message to with subject with content",
+          "write an email to",
           "write an email to the subject must be, and the content",
           "Tell to 'test@example.com' that his new car is available.",
-          "Write a professional email to reject the candidate 'John Doe \u003ctest@example.com'"
+          "Write a professional email to reject the candidate 'John Doe <test@example.com>'"
         ]
       }
     },
@@ -5703,7 +5703,7 @@
         ],
         "x-nl-input-examples": [
           "update my IMAP settings to",
-          "change my IMAP settings ",
+          "change my IMAP settings",
           "set my IMAP settings to"
         ]
       }
@@ -6013,7 +6013,7 @@
         ],
         "x-nl-input-examples": [
           "update my POP settings to",
-          "change my POP settings ",
+          "change my POP settings",
           "set my POP settings to"
         ]
       }
