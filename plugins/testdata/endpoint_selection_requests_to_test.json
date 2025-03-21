@@ -187,16 +187,382 @@
   },
   {
     "api_id": "tyk-jira-id",
-    "query": "what are the last issues of project PUCCINI",
+    "query": "what are the last issues of project AGENTCY",
     "expected": "searchForIssuesUsingJql",
     "reach_threshold": true
   },
   {
     "api_id": "tyk-jira-id",
-    "query": "I want to create an issue on project PUCCINI with description 'this is a test issue'",
+    "query": "Create a new components with name 'agent 1' in project AGENTCY",
+    "expected": "createComponent",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-jira-id",
+    "query": "delete components 'agent 1' from project AGENTCY",
+    "expected": "deleteComponent",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-jira-id",
+    "query": "give me all details about the component 'agent 1' on project AGENTCY",
+    "expected": "getComponent",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-jira-id",
+    "query": "set the name of the component with id '123456789' on project AGENTCY to 'agent 1'",
+    "expected": "updateComponent",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-jira-id",
+    "query": "show me all my dashboards",
+    "expected": "getAllDashboards",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-jira-id",
+    "query": "create for me a new dashboard named 'my personal dashboard' with permission 'global'",
+    "expected": "createDashboard",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-jira-id",
+    "query": "give me the list of all dashboard for project AGENTCY",
+    "expected": "getDashboardsPaginated",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-jira-id",
+    "query": "give me the list of all dashboard for project AGENTCY",
+    "expected": "getDashboardsPaginated",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-jira-id",
+    "query": "Please, delete the dashboard '123456789'",
+    "expected": "deleteDashboard",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-jira-id",
+    "query": "Give me the details of the dashboard '123456789'",
+    "expected": "getDashboard",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-jira-id",
+    "query": "update dashboard '123456789' and set the name to 'another dashboard'",
+    "expected": "updateDashboard",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-jira-id",
+    "query": "update the name of dashboard '123456789' to 'another dashboard'",
+    "expected": "updateDashboard",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-jira-id",
+    "query": "create a copy of the dashboard with id '123456789' and set the name 'dashboard copy'",
+    "expected": "copyDashboard",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-jira-id",
+    "query": "give me the list of all events",
+    "expected": "getEvents",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-jira-id",
+    "query": "give me the list of all custom fields",
+    "expected": "getFields",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-jira-id",
+    "query": "Create a custom field named 'Approvers' of type 'com.atlassian.jira.plugin.system.customfieldtypes:multiuserpicker' and description 'Contains users needed for approval. This custom field was created by Jira Service Desk.'",
+    "expected": "createCustomField",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-jira-id",
+    "query": "delete the custom field with id '123456789'",
+    "expected": "deleteCustomField",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-jira-id",
+    "query": "Create a new filter that allow to list all open bugs, named 'filter 1'",
+    "expected": "createFilter",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-jira-id",
+    "query": "could you please delete the filter id '123456789'",
+    "expected": "deleteFilter",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-jira-id",
+    "query": "give me details from the filter with id '123456789'",
+    "expected": "getFilter",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-jira-id",
+    "query": "set the name of the filter with id '123456789' to 'another filter name'",
+    "expected": "updateFilter",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-jira-id",
+    "query": "remove the group of users '123456789'",
+    "expected": "removeGroup",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-jira-id",
+    "query": "Please, give me details of the group of users '123456789'",
+    "expected": "getGroup",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-jira-id",
+    "query": "Create a new group of users, and named it 'group 1'",
+    "expected": "createGroup",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-jira-id",
+    "query": "show me the list of users for group 'group 1'",
+    "expected": "getUsersFromGroup",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-jira-id",
+    "query": "remove the user 'user1' from the group of users '123456789'",
+    "expected": "removeUserFromGroup",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-jira-id",
+    "query": "add user 'user1' on group of users '123456789'",
+    "expected": "addUserToGroup",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-jira-id",
+    "query": "I want to create an issue on project AGENTCY with description 'this is a test issue'",
     "expected": "createIssue",
     "reach_threshold": true
   },
+  {
+    "api_id": "tyk-jira-id",
+    "query": "Please, delete the issue '123456789'. It is no more needed.",
+    "expected": "deleteIssue",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-jira-id",
+    "query": "Please, give me the details of the issue '123456789'",
+    "expected": "getIssue",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-jira-id",
+    "query": "update the issue '123456789', and add the label 'bugs' on it",
+    "expected": "editIssue",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-jira-id",
+    "query": "assign the issue '123456789' to the user 'john doe'",
+    "expected": "assignIssue",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-jira-id",
+    "query": "give me the list of all kind of issues for project AGENCTCY",
+    "expected": "",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-jira-id",
+    "query": "add a new kind of issue named 'false positive' on project AGENCTCY",
+    "expected": "",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-jira-id",
+    "query": "delete the kind of issue id '123456789' from project AGENCTCY",
+    "expected": "",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-jira-id",
+    "query": "show me details of issue type with id '123456789'",
+    "expected": "",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-jira-id",
+    "query": "change name of issue type with id '123456789' to 'a new name'",
+    "expected": "",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-jira-id",
+    "query": "show me the list of labels included on the project AGENTCY",
+    "expected": "getAllLabels",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-jira-id",
+    "query": "give me a list of all my permissions",
+    "expected": "getMyPermissions",
+    "reach_threshold": true
+  },
+  {
+    "api_id": "tyk-jira-id",
+    "query": "who am i?",
+    "expected": "getCurrentUser",
+    "reach_threshold": true
+  },  
+  {
+    "api_id": "tyk-jira-id",
+    "query": "give me the list of all my working projects",
+    "expected": "getPermittedProjects",
+    "reach_threshold": true
+  },  
+  {
+    "api_id": "tyk-jira-id",
+    "query": "give me a list of all priorities that has been defined on project AGENTCY",
+    "expected": "getPriorities",
+    "reach_threshold": true
+  },  
+  {
+    "api_id": "tyk-jira-id",
+    "query": "create a new priority named 'top' with description 'on the top'",
+    "expected": "createPriority",
+    "reach_threshold": true
+  },  
+  {
+    "api_id": "tyk-jira-id",
+    "query": "remove the priority with id '123456789'",
+    "expected": "deletePriority",
+    "reach_threshold": true
+  },  
+  {
+    "api_id": "tyk-jira-id",
+    "query": "show me details of the priority with id '123456789'",
+    "expected": "getPriority",
+    "reach_threshold": true
+  },  
+  {
+    "api_id": "tyk-jira-id",
+    "query": "update the name of the priority with id '123456789' and set it to 'a new name'",
+    "expected": "updatePriority",
+    "reach_threshold": true
+  },  
+  {
+    "api_id": "tyk-jira-id",
+    "query": "give me the list of all visible projects to me",
+    "expected": "getAllProjects",
+    "reach_threshold": true
+  },  
+  {
+    "api_id": "tyk-jira-id",
+    "query": "create a new project name='Agent A' and description='this is a test agent dedicated for demo purpose'",
+    "expected": "createProject",
+    "reach_threshold": true
+  },  
+  {
+    "api_id": "tyk-jira-id",
+    "query": "give me a list of my lasts projects",
+    "expected": "getRecent",
+    "reach_threshold": true
+  },  
+  {
+    "api_id": "tyk-jira-id",
+    "query": "show me the page 5 of all projects list, with 10 projects per page",
+    "expected": "searchProjects",
+    "reach_threshold": true
+  },  
+  {
+    "api_id": "tyk-jira-id",
+    "query": "delete project with id'123456789'",
+    "expected": "deleteProject",
+    "reach_threshold": true
+  },  
+  {
+    "api_id": "tyk-jira-id",
+    "query": "delete project '123456789'",
+    "expected": "deleteProject",
+    "reach_threshold": true
+  },  
+  {
+    "api_id": "tyk-jira-id",
+    "query": "show me details of project '123456789'",
+    "expected": "getProject",
+    "reach_threshold": true
+  },  
+  {
+    "api_id": "tyk-jira-id",
+    "query": "change the name of project '123456789' to 'another name'",
+    "expected": "updateProject",
+    "reach_threshold": true
+  },  
+  {
+    "api_id": "tyk-jira-id",
+    "query": "give me the list of components on project '123456789'",
+    "expected": "getProjectComponents",
+    "reach_threshold": true
+  },  
+  {
+    "api_id": "tyk-jira-id",
+    "query": "show me the list of all versions project '123456789'",
+    "expected": "getProjectVersions",
+    "reach_threshold": true
+  },  
+  {
+    "api_id": "tyk-jira-id",
+    "query": "give me the list of all issues created on project '123456789'",
+    "expected": "searchForIssuesUsingJql",
+    "reach_threshold": true
+  },  
+  {
+    "api_id": "tyk-jira-id",
+    "query": "create a new version of the project '123456789' with the name 'v1.0.0' and the description 'Release 02/02/1970, v1.0.0'",
+    "expected": "createVersion",
+    "reach_threshold": true
+  },  
+  {
+    "api_id": "tyk-jira-id",
+    "query": "delete version '987654321' of the project '123456789'",
+    "expected": "deleteVersion",
+    "reach_threshold": true
+  },  
+  {
+    "api_id": "tyk-jira-id",
+    "query": "show me the status of the version '987654321' for the project '123456789'",
+    "expected": "getVersion",
+    "reach_threshold": true
+  },  
+  {
+    "api_id": "tyk-jira-id",
+    "query": "show me all details of the version '987654321' for the project '123456789'",
+    "expected": "getVersion",
+    "reach_threshold": true
+  },  
+  {
+    "api_id": "tyk-jira-id",
+    "query": "set the release date of the version '987654321' for the project '123456789' to '1970/01/01'",
+    "expected": "updateVersion",
+    "reach_threshold": true
+  },  
   {
     "api_id": "tyk-gmail-id",
     "query": "I want to create a new draft with label 'DRAFT', subject 'test' and body 'this is a test'",

@@ -28,6 +28,7 @@ var SpecToTests = []struct {
 	specFilename string
 }{
 	{"tyk-gmail-id", "../configs/gmail.googleapis.com.oas.json"},
+	{"tyk-jira-id", "../configs/your-domain.atlassian.net.oas.json"},
 	{"tyk-github-id", "../configs/api.github.com.gist.deref.oas.json"},
 	{"tyk-sendgrid-id", "../configs/api.sendgrid.com.oas.json"},
 }
@@ -148,6 +149,9 @@ func TestEndpointSelection(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.Query, func(t *testing.T) {
+			if len(tt.ExpectedOperation) == 0 {
+				t.Skip("No expected operation for query: " + tt.Query)
+			}
 			_, ok := pluginConfig[tt.TargetApiID]
 			if ok {
 				matchingOperation, matchingScore, err := findSelectOperation(tt.TargetApiID, tt.Query)
