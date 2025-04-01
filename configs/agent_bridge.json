@@ -1,0 +1,133 @@
+{
+    "name": "Agent Bridge API",
+    "api_id": "ecebc54a-0930-4a2c-b29e-b7e594053fb6",
+    "org_id": "",
+    "definition": {
+        "enabled": false
+    },
+    "use_keyless": true,
+    "use_oauth2": false,
+    "auth": {
+        "auth_header_name": ""
+    },
+    "version_data": {
+        "not_versioned": true,
+        "default_version": "Default",
+        "versions": {
+            "Default": {
+                "name": "",
+                "expires": "",
+                "paths": {
+                    "ignored": null,
+                    "white_list": null,
+                    "black_list": null
+                },
+                "use_extended_paths": true,
+                "extended_paths": {
+                    "persist_graphql": null,
+                    "rate_limit": null,
+                    "ignored": null,
+                    "white_list": null,
+                    "black_list": null,
+                    "url_rewrites": [
+                        {
+                            "path": "/gmail",
+                            "method": "GET",
+                            "match_pattern": "",
+                            "rewrite_to": "tyk://c7ce28f7b17a443c86234b1120d331ec/httpbin_tyk/",
+                            "triggers": []
+                        },
+                        {
+                            "path": "/github",
+                            "method": "GET",
+                            "match_pattern": "",
+                            "rewrite_to": "tyk://tyk-github-id/github_tyk/",
+                            "triggers": []
+                        }
+                    ]
+                }
+            }
+        }
+    },
+    "proxy": {
+        "listen_path": "/acp/",
+        "target_url": "",
+        "strip_listen_path": true
+    },
+    "enable_batch_request_support": true,
+    "custom_middleware":{
+        "pre": [
+            {
+                "disabled": false,
+                "name": "ProcessACPQuery",
+                "path": "middleware/agent-bridge-plugin.so",
+                "require_session": false,
+                "raw_body_only": false
+            }
+        ],
+        "post": [],
+        "post_key_auth": null,
+        "auth_check": {
+            "disabled": true,
+            "name": "",
+            "path": "",
+            "require_session": false,
+            "raw_body_only": false
+        },
+        "response": [
+            {
+                "disabled": false,
+                "name": "ProcessACPResponse",
+                "path": "middleware/agent-bridge-plugin.so",
+                "require_session": false,
+                "raw_body_only": false
+            }
+        ],
+        "traffic_logs": null,
+        "driver": "goplugin",
+        "id_extractor": {
+            "disabled": true,
+            "extract_from": "",
+            "extract_with": "",
+            "extractor_config": null
+        }
+    },
+    "custom_middleware_bundle": "",
+    "custom_middleware_bundle_disabled": true,
+    "cache_options": {
+        "cache_timeout": 0,
+        "enable_cache": false,
+        "cache_all_safe_requests": false,
+        "cache_response_codes": null,
+        "enable_upstream_cache_control": false,
+        "cache_control_ttl_header": "",
+        "cache_by_headers": null
+    },
+    "config_data": {
+        "azureConfig": {
+            "openAIEndpoint": "https://smith-project-agents.openai.azure.com",
+            "openAIKey": "62eccad2fad545ccb9e75db791089355"
+        },
+        "supported_services": [
+            {
+                "name": "github",
+                "url": "tyk://tyk-github-id/github_tyk/",
+                "utterances": [
+                    "create a repository",
+                    "delete a repository",
+                    "list my repositories"
+                ]
+            },
+            {
+                "name": "httpbin",
+                "url": "tyk://c7ce28f7b17a443c86234b1120d331ec/httpbin_tyk/",
+                "utterances": [
+                    "get my ip",
+                    "get my user agent",
+                    "get my headers"
+                ]
+            }
+        ]
+    },
+    "config_data_disabled": false
+}

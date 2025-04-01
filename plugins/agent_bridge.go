@@ -41,10 +41,23 @@ var logger = log.Get()
 
 func SelectAndRewrite(rw http.ResponseWriter, r *http.Request) {
 	logger.Debugf("[+] Inside SelectAndRewrite ...")
-	apiConfig, err := initPluginFromRequest(r)
+	apiConfig, err := getPluginFromRequest(r)
 	if err != nil {
 		logger.Debugf("[+] Failed to init plugin from request: %s", err)
 		http.Error(rw, INTERNAL_ERROR_MSG, http.StatusInternalServerError)
+		return
+	}
+
+	// implement the delete API (for cross API semantic routing support)
+	if r.Method == "DELETE" && r.Header.Get("Content-Type") != CONTENT_TYPE_NLQ {
+		logger.Debugf("[+] Delete API '%s' for cross API semantic routing support ...", apiConfig.APIID)
+		deletePluginConfig(apiConfig.APIID)
+		return
+	}
+	// implement the update API (for cross API semantic routing support)
+	if r.Method == "PUT" && r.Header.Get("Content-Type") != CONTENT_TYPE_NLQ {
+		logger.Debugf("[+] Update API '%s' for cross API semantic routing support ...", apiConfig.APIID)
+		updatePluginConfig(apiConfig.APIID, r)
 		return
 	}
 
@@ -114,7 +127,7 @@ func SelectAndRewrite(rw http.ResponseWriter, r *http.Request) {
 }
 
 func RewriteQueryToOas(rw http.ResponseWriter, r *http.Request) {
-	_, err := initPluginFromRequest(r)
+	_, err := getPluginFromRequest(r)
 	if err != nil {
 		http.Error(rw, INTERNAL_ERROR_MSG, http.StatusInternalServerError)
 		return
@@ -154,7 +167,7 @@ func RewriteQueryToOas(rw http.ResponseWriter, r *http.Request) {
 }
 
 func RewriteResponseToNl(rw http.ResponseWriter, res *http.Response, req *http.Request) {
-	_, err := initPluginFromRequest(req)
+	_, err := getPluginFromRequest(req)
 	if err != nil {
 		http.Error(rw, INTERNAL_ERROR_MSG, http.StatusInternalServerError)
 		return
@@ -203,7 +216,7 @@ func RewriteResponseToNl(rw http.ResponseWriter, res *http.Response, req *http.R
 func QueryEndpointSelection(rw http.ResponseWriter, r *http.Request) {
 	logger.Debugf("[+] Entering QueryEndpointSelection ...")
 
-	apiConfig, err := initPluginFromRequest(r)
+	apiConfig, err := getPluginFromRequest(r)
 	if err != nil {
 		logger.Debugf("[+] Failed to init plugin from request: %s", err)
 		http.Error(rw, INTERNAL_ERROR_MSG, http.StatusInternalServerError)

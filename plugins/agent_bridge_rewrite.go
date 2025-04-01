@@ -102,7 +102,7 @@ func rewriteQuery(r *http.Request) error {
 }
 
 func rewriteQueryForRoute(r *http.Request, route *routers.Route, pathParams map[string]string) error {
-	config, err := initPluginFromRequest(r)
+	config, err := getPluginFromRequest(r)
 	if err != nil {
 		return fmt.Errorf("can't retreive the LLM configuration: %w", err)
 	}
@@ -433,7 +433,7 @@ func responseToNL(r *http.Request, upstreamResponse string) (string, error) {
 		return "", fmt.Errorf("error while creating the user prompt: %w", err)
 	}
 
-	config, err := initPluginFromRequest(r)
+	config, err := getPluginFromRequest(r)
 	if err != nil {
 		return "", fmt.Errorf("can't retreive the LLM configuration: %w", err)
 	}

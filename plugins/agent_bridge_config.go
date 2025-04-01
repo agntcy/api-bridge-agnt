@@ -12,6 +12,8 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
+	"github.com/TykTechnologies/tyk/apidef/oas"
+	"github.com/TykTechnologies/tyk/storage"
 	"github.com/kelindar/search"
 )
 
@@ -23,7 +25,8 @@ const (
 	DEFAULT_OPENAI_ENDPOINT        = "https://api.openai.com/v1"
 	DEFAULT_OPENAI_MODEL           = "gpt-4o-mini"
 
-	MAX_UTERANCE_LENGTH = 1500
+	MAX_UTERANCE_LENGTH   = 1500
+	VECTORIZER_GPU_LAYERS = 1
 )
 
 type AzureConfig struct {
@@ -56,8 +59,10 @@ type PluginDataConfig struct {
 	SelectModelEmbedding string                        `json:"selectModelEmbedding"`
 	SelectModelsPath     string                        `json:"selectModelsPath"`
 	LlmConfig            *NLAPIConfig                  `json:"llmConfig"`
+	Store                *storage.RedisCluster
 
-	APIID string
+	APIID      string
+	ListenPath string
 }
 
 func getApiId(r *http.Request) (string, error) {
@@ -112,59 +117,48 @@ func parseConfigData(apiId string, configData map[string]any) (*PluginDataConfig
 	return pluginDataConfig, nil
 }
 
-func initPluginFromRequest(r *http.Request) (*PluginDataConfig, error) {
-	apiID, err := getApiId(r)
-	if err != nil {
-		logger.Errorf("[+] initPluginFromRequest cannot find api id: %s", err)
-		return nil, err
-	}
+func initPluginFromRequest(apiId string, apiDef *oas.OAS) (*PluginDataConfig, error) {
+	logger.Debugf("[+] Initializing for api id: %s", apiId)
 
-	// Note: we really need to just to be able to clear the cache on API def
-	// reloads to fix everything complicated.
-	pluginConfigLock.RLock()
-	pluginDataConfig, present := pluginConfig[apiID]
-	pluginConfigLock.RUnlock()
-	if present {
-		logger.Debugf("[+] Config data already cached for api id: %s", apiID)
-		return pluginDataConfig, nil
-	}
-
-	logger.Debugf("[+] Initializing for api id: %s", apiID)
-
-	apidef := getOASDefinition(r)
-	// TOOD: fallback on classic...
-	if apidef == nil {
-		err := fmt.Errorf("API definition is nil")
+	if apiDef == nil {
+		err := fmt.Errorf("API definition is nil for api id: %s", apiId)
 		logger.Errorf("[+] initPluginFromRequest: %s", err)
 		return nil, err
 	}
 
-	middleware := apidef.GetTykMiddleware()
+	middleware := apiDef.GetTykMiddleware()
 	if middleware == nil {
-		err := fmt.Errorf("Tyk middleware definition is nil")
+		err := fmt.Errorf("Tyk middleware definition is nil for api id: %s", apiId)
 		logger.Errorf("[+] initPluginFromRequest: %s", err)
 		return nil, err
 	}
 	globalPluginConfig := middleware.Global.PluginConfig
 	if globalPluginConfig == nil {
-		err := fmt.Errorf("Tyk global.pluginConfig definition is nil")
+		err := fmt.Errorf("Tyk global.pluginConfig definition is nil for api id: %s", apiId)
 		logger.Errorf("[+] initPluginFromRequest: %s", err)
 		return nil, err
 	}
-	pluginConfigData := globalPluginConfig.Data
-	if pluginConfigData == nil {
-		err := fmt.Errorf("Tyk pluginConfig.data definition is nil")
+	apiConfigData := globalPluginConfig.Data
+	if apiConfigData == nil {
+		err := fmt.Errorf("Tyk pluginConfig.data definition is nil for api id: %s", apiId)
 		logger.Errorf("[+] initPluginFromRequest: %s", err)
 		return nil, err
 	}
-	pluginDataConfig, err = parseConfigData(apiID, pluginConfigData.Value)
+
+	pluginDataConfig, err := parseConfigData(apiId, apiConfigData.Value)
 	if err != nil {
 		logger.Fatalf("[+] Unable to parse configuration data: %s", err)
 		return pluginDataConfig, err
 	}
 
+	if pluginDataConfig.AzureConfig.OpenAIKey == "" {
+		err := fmt.Errorf("Missing required config for azureConfig.openAIKey")
+		logger.Fatalf("[+] Error initializing plugin: %s", err)
+		return pluginDataConfig, err
+	}
+
 	// Iterate through all paths and operations in the API definition
-	for _, path := range apidef.Paths {
+	for _, path := range apiDef.Paths {
 		for _, operation := range path.Operations() {
 			// Check if this operation has AI input examples defined
 			aiExamples, hasAiExamples := operation.Extensions[SPEC_EXT_AI_INPUT_EXAMPLES]
@@ -194,7 +188,7 @@ func initPluginFromRequest(r *http.Request) (*PluginDataConfig, error) {
 	// If we have no operation with x-nl-input-examples then we rely only on the
 	// descriptions
 	if len(pluginDataConfig.SelectOperations) == 0 {
-		for _, path := range apidef.Paths {
+		for _, path := range apiDef.Paths {
 			for _, operation := range path.Operations() {
 				if operation.OperationID == "" {
 					continue
@@ -205,12 +199,6 @@ func initPluginFromRequest(r *http.Request) (*PluginDataConfig, error) {
 				pluginDataConfig.SelectOperations[operation.OperationID] = aiExtentionConfig
 			}
 		}
-	}
-
-	if pluginDataConfig.AzureConfig.OpenAIKey == "" {
-		err := fmt.Errorf("Missing required config for azureConfig.openAIKey")
-		logger.Fatalf("[+] Error initializing plugin: %s", err)
-		return pluginDataConfig, err
 	}
 
 	// Note: eventually cache these by hash of config?
@@ -231,24 +219,20 @@ func initPluginFromRequest(r *http.Request) (*PluginDataConfig, error) {
 		azureClient: client,
 	}
 
-	pluginConfigLock.Lock()
-	pluginConfig[apiID] = pluginDataConfig
-	pluginConfigLock.Unlock()
-
 	if len(pluginDataConfig.SelectOperations) > 0 {
 		// Note: create embedder before initializing indices!
-		logger.Debugf("[+] Loading embedding model %s for api id: %s", pluginDataConfig.SelectModelEmbedding, apiID)
+		logger.Debugf("[+] Loading embedding model %s for api id: %s", pluginDataConfig.SelectModelEmbedding, apiId)
 		embeddingModelsLock.RLock()
 		_, present := embeddingModels[pluginDataConfig.SelectModelEmbedding]
 		embeddingModelsLock.RUnlock()
 		if present {
-			logger.Debugf("[+] embedding model %s cached for api id: %s", pluginDataConfig.SelectModelEmbedding, apiID)
+			logger.Debugf("[+] embedding model %s cached for api id: %s", pluginDataConfig.SelectModelEmbedding, apiId)
 		} else {
 			modelPath := filepath.Join(pluginDataConfig.SelectModelsPath, pluginDataConfig.SelectModelEmbedding)
 			embeddingModelsLock.Lock()
 			_, present := embeddingModels[pluginDataConfig.SelectModelEmbedding]
 			if !present {
-				modelEmbedder, err := search.NewVectorizer(modelPath, 1)
+				modelEmbedder, err := search.NewVectorizer(modelPath, VECTORIZER_GPU_LAYERS)
 				if err != nil {
 					embeddingModelsLock.Unlock()
 					logger.Fatalf("[+] Unable to find embedding model %s: %s", pluginDataConfig.SelectModelEmbedding, err)
@@ -258,19 +242,74 @@ func initPluginFromRequest(r *http.Request) (*PluginDataConfig, error) {
 			}
 			embeddingModelsLock.Unlock()
 			if !present {
-				logger.Debugf("[+] Added embedding model %s for api id: %s", pluginDataConfig.SelectModelEmbedding, apiID)
+				logger.Debugf("[+] Added embedding model %s for api id: %s", pluginDataConfig.SelectModelEmbedding, apiId)
 			}
 		}
 
-		if err := initSelectOperations(apiID, pluginDataConfig); err != nil {
-			logger.Fatalf("[+] failed to initialize select operations for api id %s: %s", apiID, err)
+		if err := initSelectOperations(apiId, pluginDataConfig); err != nil {
+			logger.Fatalf("[+] failed to initialize select operations for api id %s: %s", apiId, err)
 			return pluginDataConfig, err
 		}
 	}
 
+	gateway := apiDef.GetTykExtension()
+	if gateway == nil {
+		return pluginDataConfig, fmt.Errorf("Tyk gateway definition is nil")
+	}
+	pluginDataConfig.ListenPath = gateway.Server.ListenPath.Value
+
+	return pluginDataConfig, nil
+}
+
+func getPluginFromRequest(r *http.Request) (*PluginDataConfig, error) {
+	apiId, err := getApiId(r)
+	if err != nil {
+		logger.Errorf("[+] getPluginFromRequest cannot find api id: %s", err)
+		return nil, err
+	}
+
+	// Note: we really need to just to be able to clear the cache on API def
+	// reloads to fix everything complicated.
+	pluginConfigLock.RLock()
+	pluginDataConfig, present := pluginConfig[apiId]
+	pluginConfigLock.RUnlock()
+	if present {
+		logger.Debugf("[+] Config data already cached for api id: %s", apiId)
+		return pluginDataConfig, nil
+	}
+
+	apiDef := getOASDefinition(r)
+	// TOOD: fallback on classic...
+	if apiDef == nil {
+		err := fmt.Errorf("API definition is nil")
+		logger.Errorf("[+] getPluginFromRequest: %s", err)
+		return nil, err
+	}
+
+	pluginDataConfig, err = initPluginFromRequest(apiId, apiDef)
+	if err != nil {
+		logger.Fatalf("[+] Unable to parse configuration data: %s", err)
+		return nil, err
+	}
+
+	// Init Redis store
+	if pluginDataConfig.Store == nil {
+		pluginDataConfig.Store = getStorageForPlugin(r.Context())
+	}
+
+	pluginConfigLock.Lock()
+	pluginConfig[apiId] = pluginDataConfig
+	pluginConfigLock.Unlock()
+
+	// Save the plugin data config to the Redis store
+	if err := saveApiUterances(apiId, pluginDataConfig); err != nil {
+		logger.Fatalf("[+] failed to save plugin data config to redis store: %s", err)
+		return pluginDataConfig, err
+	}
+
 	logConfig()
 
-	logger.Debugf("[+] Finished initPluginFromRequest for api id: %s", apiID)
+	logger.Debugf("[+] Finished getPluginFromRequest for api id: %s", apiId)
 	return pluginDataConfig, nil
 }
 
@@ -315,6 +354,8 @@ func initSelectOperations(apiId string, pluginDataConfig *PluginDataConfig) erro
 
 func logConfig() {
 	pluginConfigLock.RLock()
+	defer pluginConfigLock.RUnlock()
+
 	for apiId, pluginDataConfig := range pluginConfig {
 		logger.Infof("[+] Config %s: Azure OpenAI API Key: %s", apiId, "**REDACTED**")
 		logger.Infof("[+] Config %s: Azure OpenAI Endpoint: %s", apiId, pluginDataConfig.AzureConfig.OpenAIEndpoint)
@@ -324,5 +365,60 @@ func logConfig() {
 			logger.Infof("[+] Config %s: Select embedding model: %s", apiId, filepath.Join(pluginDataConfig.SelectModelsPath, pluginDataConfig.SelectModelEmbedding))
 		}
 	}
-	pluginConfigLock.RUnlock()
+}
+
+func deletePluginConfig(apiId string) {
+	pluginConfigLock.Lock()
+	defer pluginConfigLock.Unlock()
+
+	logger.Debugf("[+] Deleting api id: %s", apiId)
+	if _, present := pluginConfig[apiId]; present {
+		err := deleteApiUterances(apiId, pluginConfig[apiId])
+		if err != nil {
+			logger.Errorf("[+] Error while deleting utterances for api id %s: %s", apiId, err)
+			return
+		}
+		delete(pluginConfig, apiId)
+	}
+
+	apiSpecIndicesLock.Lock()
+	delete(apiSpecIndices, apiId)
+	apiSpecIndicesLock.Unlock()
+}
+
+func updatePluginConfig(apiId string, r *http.Request) (*PluginDataConfig, error) {
+	pluginConfigLock.Lock()
+	defer pluginConfigLock.Unlock()
+
+	logger.Debugf("[+] Updating api id: %s", apiId)
+	apiDef := getOASDefinition(r)
+	// TOOD: fallback on classic...
+	if apiDef == nil {
+		err := fmt.Errorf("API definition is nil")
+		logger.Errorf("[+] updatePluginConfig: %s", err)
+		return nil, err
+	}
+
+	pluginDataConfig, err := initPluginFromRequest(apiId, apiDef)
+	if err != nil {
+		logger.Fatalf("[+] Unable to parse configuration data: %s", err)
+		return nil, err
+	}
+
+	// Init Redis store
+	if pluginDataConfig.Store == nil {
+		pluginDataConfig.Store = getStorageForPlugin(r.Context())
+	}
+
+	pluginConfigLock.Lock()
+	pluginConfig[apiId] = pluginDataConfig
+	pluginConfigLock.Unlock()
+
+	// Save the plugin data config to the Redis store
+	if err := saveApiUterances(apiId, pluginDataConfig); err != nil {
+		logger.Fatalf("[+] failed to save plugin data config to redis store: %s", err)
+		return pluginDataConfig, err
+	}
+
+	return pluginDataConfig, nil
 }
