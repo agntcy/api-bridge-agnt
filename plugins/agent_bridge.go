@@ -4,6 +4,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -21,6 +22,7 @@ const (
 	CONTENT_TYPE_NLQ          = "application/nlq"
 	HEADER_X_NL_QUERY_ENABLED = "X-Nl-Query-Enabled"
 	HEADER_X_NL_RESPONSE_TYPE = "X-Nl-Response-Type"
+	HEADER_X_NL_CONFIG        = "X-Nl-Config"
 
 	RESPONSE_TYPE_NL       = "nl"       // Rewrite the response to Natural Language
 	RESPONSE_TYPE_UPSTREAM = "upstream" // Keep the response as it is
@@ -48,16 +50,20 @@ func SelectAndRewrite(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// implement the delete API (for cross API semantic routing support)
-	if r.Method == "DELETE" && r.Header.Get("Content-Type") != CONTENT_TYPE_NLQ {
-		logger.Debugf("[+] Delete API '%s' for cross API semantic routing support ...", apiConfig.APIID)
-		deletePluginConfig(apiConfig.APIID)
-		return
-	}
-	// implement the update API (for cross API semantic routing support)
-	if r.Method == "PUT" && r.Header.Get("Content-Type") != CONTENT_TYPE_NLQ {
-		logger.Debugf("[+] Update API '%s' for cross API semantic routing support ...", apiConfig.APIID)
-		updatePluginConfig(apiConfig.APIID, r)
+	// Check if request is for configuration
+	_, exists := r.Header[HEADER_X_NL_CONFIG]
+	if exists {
+		// implement the delete API (for cross API semantic routing support)
+		if r.Method == "DELETE" {
+			logger.Debugf("[+] Delete API '%s' for cross API semantic routing support ...", apiConfig.APIID)
+			deletePluginConfig(apiConfig.APIID)
+		}
+		// implement the update API (for cross API semantic routing support)
+		if r.Method == "PUT" {
+			logger.Debugf("[+] Update API '%s' for cross API semantic routing support ...", apiConfig.APIID)
+			updatePluginConfig(apiConfig.APIID, r)
+		}
+		rw.WriteHeader(http.StatusOK)
 		return
 	}
 
@@ -257,7 +263,13 @@ func QueryEndpointSelection(rw http.ResponseWriter, r *http.Request) {
 }
 
 func init() {
-	logger.Infof("[+] Initializing API Bridge Agnt plugin ...")
+	logger.Infof("[+] Initializing API Bridge Agnt plugin (APIs)...")
+
+	// Init Redis store, if needed
+	if agentBridgeStore == nil {
+		agentBridgeStore = getStorageForPlugin(context.TODO())
+	}
+
 }
 
 func main() {}

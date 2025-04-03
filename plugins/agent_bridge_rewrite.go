@@ -115,7 +115,7 @@ func rewriteQueryForRoute(r *http.Request, route *routers.Route, pathParams map[
 	newParams := llmNlToOpenAPIRequest(r.Context(), route.Operation, string(nlSentence), config.LlmConfig)
 	if newParams == nil {
 		logger.Errorf("[+] Error creating the new request")
-		return errors.New("I'm sorry but I was not able to understand your query")
+		return errors.New("i'm sorry but I was not able to understand your query")
 	}
 
 	// Override the method
@@ -273,7 +273,6 @@ func buildOperationString(operation *openapi3.Operation) (string, error) {
 	refs := map[string]*openapi3.Schema{}
 
 	var sb strings.Builder
-
 
 	operationString, err := operation.MarshalJSON()
 	if err != nil {

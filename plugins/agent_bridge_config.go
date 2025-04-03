@@ -13,7 +13,6 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/TykTechnologies/tyk/apidef/oas"
-	"github.com/TykTechnologies/tyk/storage"
 	"github.com/kelindar/search"
 )
 
@@ -49,6 +48,8 @@ var apiSpecIndicesLock = &sync.RWMutex{}
 var pluginConfig = map[string]*PluginDataConfig{} // api id -> config
 var pluginConfigLock = &sync.RWMutex{}
 
+//var agentBridgeStore *storage.RedisCluster
+
 type AIExtensionConfig struct {
 	InputExamples []string `json:"x-nl-input-examples"`
 }
@@ -59,7 +60,6 @@ type PluginDataConfig struct {
 	SelectModelEmbedding string                        `json:"selectModelEmbedding"`
 	SelectModelsPath     string                        `json:"selectModelsPath"`
 	LlmConfig            *NLAPIConfig                  `json:"llmConfig"`
-	Store                *storage.RedisCluster
 
 	APIID      string
 	ListenPath string
@@ -74,7 +74,7 @@ func getApiId(r *http.Request) (string, error) {
 	}
 	gateway := apidef.GetTykExtension()
 	if gateway == nil {
-		return "", fmt.Errorf("Tyk gateway definition is nil")
+		return "", fmt.Errorf("the Tyk gateway definition is nil")
 	}
 	return gateway.Info.ID, nil
 }
@@ -128,19 +128,19 @@ func initPluginFromRequest(apiId string, apiDef *oas.OAS) (*PluginDataConfig, er
 
 	middleware := apiDef.GetTykMiddleware()
 	if middleware == nil {
-		err := fmt.Errorf("Tyk middleware definition is nil for api id: %s", apiId)
+		err := fmt.Errorf("the Tyk middleware definition is nil for api id: %s", apiId)
 		logger.Errorf("[+] initPluginFromRequest: %s", err)
 		return nil, err
 	}
 	globalPluginConfig := middleware.Global.PluginConfig
 	if globalPluginConfig == nil {
-		err := fmt.Errorf("Tyk global.pluginConfig definition is nil for api id: %s", apiId)
+		err := fmt.Errorf("the Tyk global.pluginConfig definition is nil for api id: %s", apiId)
 		logger.Errorf("[+] initPluginFromRequest: %s", err)
 		return nil, err
 	}
 	apiConfigData := globalPluginConfig.Data
 	if apiConfigData == nil {
-		err := fmt.Errorf("Tyk pluginConfig.data definition is nil for api id: %s", apiId)
+		err := fmt.Errorf("the Tyk pluginConfig.data definition is nil for api id: %s", apiId)
 		logger.Errorf("[+] initPluginFromRequest: %s", err)
 		return nil, err
 	}
@@ -152,7 +152,7 @@ func initPluginFromRequest(apiId string, apiDef *oas.OAS) (*PluginDataConfig, er
 	}
 
 	if pluginDataConfig.AzureConfig.OpenAIKey == "" {
-		err := fmt.Errorf("Missing required config for azureConfig.openAIKey")
+		err := fmt.Errorf("missing required config for azureConfig.openAIKey")
 		logger.Fatalf("[+] Error initializing plugin: %s", err)
 		return pluginDataConfig, err
 	}
@@ -254,9 +254,15 @@ func initPluginFromRequest(apiId string, apiDef *oas.OAS) (*PluginDataConfig, er
 
 	gateway := apiDef.GetTykExtension()
 	if gateway == nil {
-		return pluginDataConfig, fmt.Errorf("Tyk gateway definition is nil")
+		return pluginDataConfig, fmt.Errorf("the Tyk gateway definition is nil")
 	}
 	pluginDataConfig.ListenPath = gateway.Server.ListenPath.Value
+
+	// Save the plugin data config to the Redis store
+	if err := saveApiUterances(apiId, pluginDataConfig); err != nil {
+		logger.Fatalf("[+] failed to save plugin data config to redis store: %s", err)
+		return pluginDataConfig, err
+	}
 
 	return pluginDataConfig, nil
 }
@@ -292,20 +298,9 @@ func getPluginFromRequest(r *http.Request) (*PluginDataConfig, error) {
 		return nil, err
 	}
 
-	// Init Redis store
-	if pluginDataConfig.Store == nil {
-		pluginDataConfig.Store = getStorageForPlugin(r.Context())
-	}
-
 	pluginConfigLock.Lock()
 	pluginConfig[apiId] = pluginDataConfig
 	pluginConfigLock.Unlock()
-
-	// Save the plugin data config to the Redis store
-	if err := saveApiUterances(apiId, pluginDataConfig); err != nil {
-		logger.Fatalf("[+] failed to save plugin data config to redis store: %s", err)
-		return pluginDataConfig, err
-	}
 
 	logConfig()
 
@@ -405,20 +400,9 @@ func updatePluginConfig(apiId string, r *http.Request) (*PluginDataConfig, error
 		return nil, err
 	}
 
-	// Init Redis store
-	if pluginDataConfig.Store == nil {
-		pluginDataConfig.Store = getStorageForPlugin(r.Context())
-	}
-
 	pluginConfigLock.Lock()
 	pluginConfig[apiId] = pluginDataConfig
 	pluginConfigLock.Unlock()
-
-	// Save the plugin data config to the Redis store
-	if err := saveApiUterances(apiId, pluginDataConfig); err != nil {
-		logger.Fatalf("[+] failed to save plugin data config to redis store: %s", err)
-		return pluginDataConfig, err
-	}
 
 	return pluginDataConfig, nil
 }
