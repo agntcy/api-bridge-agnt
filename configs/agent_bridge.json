@@ -29,22 +29,7 @@
                     "ignored": null,
                     "white_list": null,
                     "black_list": null,
-                    "url_rewrites": [
-                        {
-                            "path": "/gmail",
-                            "method": "GET",
-                            "match_pattern": "",
-                            "rewrite_to": "tyk://c7ce28f7b17a443c86234b1120d331ec/httpbin_tyk/",
-                            "triggers": []
-                        },
-                        {
-                            "path": "/github",
-                            "method": "GET",
-                            "match_pattern": "",
-                            "rewrite_to": "tyk://tyk-github-id/github_tyk/",
-                            "triggers": []
-                        }
-                    ]
+                    "url_rewrites": []
                 }
             }
         }
@@ -103,31 +88,6 @@
         "cache_control_ttl_header": "",
         "cache_by_headers": null
     },
-    "config_data": {
-        "azureConfig": {
-            "openAIEndpoint": "https://smith-project-agents.openai.azure.com",
-            "openAIKey": "62eccad2fad545ccb9e75db791089355"
-        },
-        "supported_services": [
-            {
-                "name": "github",
-                "url": "tyk://tyk-github-id/github_tyk/",
-                "utterances": [
-                    "create a repository",
-                    "delete a repository",
-                    "list my repositories"
-                ]
-            },
-            {
-                "name": "httpbin",
-                "url": "tyk://c7ce28f7b17a443c86234b1120d331ec/httpbin_tyk/",
-                "utterances": [
-                    "get my ip",
-                    "get my user agent",
-                    "get my headers"
-                ]
-            }
-        ]
-    },
+    "config_data": {},
     "config_data_disabled": false
 }
