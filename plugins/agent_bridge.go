@@ -61,7 +61,11 @@ func SelectAndRewrite(rw http.ResponseWriter, r *http.Request) {
 		// implement the update API (for cross API semantic routing support)
 		if r.Method == "PUT" {
 			logger.Debugf("[+] Update API '%s' for cross API semantic routing support ...", apiConfig.APIID)
-			updatePluginConfig(apiConfig.APIID, r)
+			if err := updatePluginConfig(apiConfig.APIID, r); err != nil {
+				logger.Errorf("[+] Error while updating the plugin config: %s", err)
+				http.Error(rw, INTERNAL_ERROR_MSG, http.StatusInternalServerError)
+				return
+			}
 		}
 		rw.WriteHeader(http.StatusOK)
 		return

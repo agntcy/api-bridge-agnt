@@ -48,8 +48,6 @@ var apiSpecIndicesLock = &sync.RWMutex{}
 var pluginConfig = map[string]*PluginDataConfig{} // api id -> config
 var pluginConfigLock = &sync.RWMutex{}
 
-//var agentBridgeStore *storage.RedisCluster
-
 type AIExtensionConfig struct {
 	InputExamples []string `json:"x-nl-input-examples"`
 }
@@ -381,7 +379,7 @@ func deletePluginConfig(apiId string) {
 	apiSpecIndicesLock.Unlock()
 }
 
-func updatePluginConfig(apiId string, r *http.Request) (*PluginDataConfig, error) {
+func updatePluginConfig(apiId string, r *http.Request) error {
 	pluginConfigLock.Lock()
 	defer pluginConfigLock.Unlock()
 
@@ -391,18 +389,18 @@ func updatePluginConfig(apiId string, r *http.Request) (*PluginDataConfig, error
 	if apiDef == nil {
 		err := fmt.Errorf("API definition is nil")
 		logger.Errorf("[+] updatePluginConfig: %s", err)
-		return nil, err
+		return err
 	}
 
 	pluginDataConfig, err := initPluginFromRequest(apiId, apiDef)
 	if err != nil {
 		logger.Fatalf("[+] Unable to parse configuration data: %s", err)
-		return nil, err
+		return err
 	}
 
 	pluginConfigLock.Lock()
 	pluginConfig[apiId] = pluginDataConfig
 	pluginConfigLock.Unlock()
 
-	return pluginDataConfig, nil
+	return nil
 }
