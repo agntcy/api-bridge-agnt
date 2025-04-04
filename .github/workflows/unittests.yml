@@ -58,6 +58,7 @@ jobs:
           make TYK_VERSION="${{ env.TYK_VERSION }}" setup
           mkdir -p tyk-release-${{ env.TYK_VERSION }}/models/
           make TYK_VERSION="${{ env.TYK_VERSION }}" download_models_for_semrouter
+          make start_redis
 
       - name: Run tests
         run: |
