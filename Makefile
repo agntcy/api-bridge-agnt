@@ -82,7 +82,7 @@ tyk-release-$(TYK_VERSION)/$(SEARCH_LIB): search-release-$(SEARCH_VERSION)/build
 	cp -p search-release-$(SEARCH_VERSION)/dist/*.gguf "tyk-release-$(TYK_VERSION)/models"
 
 build_tyk tyk-release-$(TYK_VERSION)/tyk: tyk-release-$(TYK_VERSION)/go.mod
-	cd tyk-release-$(TYK_VERSION) && GOOS=$(TARGET_OS) GOARCH=$(TARGET_ARCH) go build -tags=goplugin -trimpath .
+	cd tyk-release-$(TYK_VERSION) && GOOS=$(TARGET_OS) GOARCH=$(TARGET_ARCH) go build -buildvcs=false -tags=goplugin -trimpath .
 
 start_tyk: tyk-release-$(TYK_VERSION)/tyk tyk-release-$(TYK_VERSION)/middleware/agent-bridge-plugin.so tyk-release-$(TYK_VERSION)/$(SEARCH_LIB)
 	if [ -f .env ]; then export $$(grep -v '^[:space:]*#' .env | xargs); fi ; \
