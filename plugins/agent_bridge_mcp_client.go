@@ -111,6 +111,9 @@ func processQueryWithMCP(nlq string) (string, error) {
 
 	// Ask to the LLM
 	messages := []azopenai.ChatRequestMessageClassification{
+		&azopenai.ChatRequestSystemMessage{
+			Content: azopenai.NewChatRequestSystemMessageContent("You are answering natural language queries using tools. Do not invent. Use a neutral tone."),
+		},
 		&azopenai.ChatRequestUserMessage{
 			Content: azopenai.NewChatRequestUserMessageContent(nlq),
 		},
