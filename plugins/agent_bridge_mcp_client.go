@@ -18,6 +18,12 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
+type MCPServers map[string]*MCPServerConfig
+
+type TykMCPConfig struct {
+	MCPServers MCPServers `json:"mcpServers"`
+}
+
 type MCPServerConfig struct {
 	Name    string   `json:"name"`
 	SSE     string   `json:"sse,omitempty"` // Either SSE or Command
@@ -29,7 +35,7 @@ type MCPServerConfig struct {
 	Tools  []mcp.Tool
 }
 
-var mcpConfig = map[string]*MCPServerConfig{}
+var mcpConfig MCPServers = MCPServers{}
 
 type MCPAzureConfig struct {
 	OpenAIKey       string `json:"openAIKey"`
@@ -46,9 +52,20 @@ var llmConfig = MCPLLMConfig{}
 
 func ProcessMCPQuery(rw http.ResponseWriter, r *http.Request) {
 	logger.Debugf("[+] Inside ProcessMCPQuery ...")
+	if r.URL.Path == "/mcp/init" || len(mcpConfig) == 0 {
+		deinitMCPClient()
+		mcpConfig = MCPServers{}
+		loadMCPPluginConfig(r)
+		initMCPClient()
+		rw.WriteHeader(http.StatusOK)
+		_, _ = rw.Write([]byte("MCP Server Initialized"))
+		return
+	}
 	// POST and Content-Type: application/nlq are expected
-	if !(r.Method == "POST" && r.Header.Get("Content-Type") == CONTENT_TYPE_NLQ) {
+	if !(r.URL.Path == "/mcp/" && r.Method == "POST" && r.Header.Get("Content-Type") == CONTENT_TYPE_NLQ) {
 		logger.Debugf("[+] Query is not POST or Content-Type is not %s, ignoring ...", CONTENT_TYPE_NLQ)
+		rw.WriteHeader(http.StatusBadRequest)
+		_, _ = rw.Write([]byte(fmt.Sprintf("You muse use POST / with Content-Type: %s", CONTENT_TYPE_NLQ)))
 		return
 	}
 
@@ -216,6 +233,15 @@ func getChatCompletionFunctionDefinition(tool mcp.Tool) (*azopenai.ChatCompletio
 	return functionDefinition, nil
 }
 
+func deinitMCPClient() {
+	for _, config := range mcpConfig {
+		if config.Client != nil {
+			config.Client.Close()
+			config.Client = nil
+		}
+	}
+}
+
 func initMCPClient() {
 	for name, config := range mcpConfig {
 		if config.Client != nil {
@@ -230,13 +256,11 @@ func initMCPClient() {
 			if err != nil {
 				logger.Fatalf("Failed to create client: %v", err)
 			}
-			defer client.Close()
 
 			err = client.Start(context.TODO())
 			if err != nil {
 				logger.Fatalf("Failed to start client")
 			}
-
 			config.Client = client
 		} else if config.Command != "" {
 			logger.Infof("[+] initMCPClient(%s): Using stdio transport for command %s\n", name, config.Command)
@@ -245,8 +269,6 @@ func initMCPClient() {
 			if err != nil {
 				logger.Fatalf("Failed to create client: %v", err)
 			}
-			defer client.Close()
-
 			config.Client = client
 		} else {
 			logger.Fatalf("Either 'sse' or 'command' must be provided for the MCP Server configuration")
@@ -284,32 +306,36 @@ func initMCPClient() {
 }
 
 func loadMCPPluginConfig(r *http.Request) error {
-	logger.Debugf("[+] loadMCPPluginConfig ...")
-	configValue := `{
-		"weather-sse": {
-			"sse": "http://127.0.0.1:8000/sse"
-		},
-		"weather-stdio": {
-			"command": "uvx",
-			"args": ["/Users/jubarbot/work/agntcy/api-bridge-agnt/plugins/weather-server-python"]
-		},
-		"github": {
-			"command": "docker",
-			"args": [
-				"run",
-				"-i",
-				"--rm",
-				"-e",
-				"GITHUB_PERSONAL_ACCESS_TOKEN",
-				"ghcr.io/github/github-mcp-server"
-			],
-			"env": ["GITHUB_PERSONAL_ACCESS_TOKEN=1234"]
-		}
-	}`
-	err := json.Unmarshal([]byte(configValue), &mcpConfig)
+	apidef := getOASDefinition(r)
+	middleware := apidef.GetTykMiddleware()
+	if middleware == nil {
+		err := fmt.Errorf("Tyk middleware definition is nil")
+		logger.Errorf("[+] initPluginFromRequest: %s", err)
+		return err
+	}
+	globalPluginConfig := middleware.Global.PluginConfig
+	if globalPluginConfig == nil {
+		err := fmt.Errorf("Tyk global.pluginConfig definition is nil")
+		logger.Errorf("[+] initPluginFromRequest: %s", err)
+		return err
+	}
+	if globalPluginConfig.Data == nil {
+		err := fmt.Errorf("Tyk global.pluginConfig.data definition is nil")
+		logger.Errorf("[+] Error while loading MCP configuration: %s", err)
+		return err
+	}
+
+	configValue, err := json.Marshal(globalPluginConfig.Data.Value)
+	if err != nil {
+		logger.Fatalf("[+] Invalid MCP Configuration: %s", err)
+	}
+
+	mcpTykConfig := TykMCPConfig{}
+	err = json.Unmarshal([]byte(configValue), &mcpTykConfig)
 	if err != nil {
 		logger.Fatalf("[+] conversion error for acpPluginConfig: %s", err)
 	}
+	mcpConfig = mcpTykConfig.MCPServers
 
 	llmConfigData := map[string]any{}
 	llmConfig.azureConfig = MCPAzureConfig{
@@ -338,10 +364,4 @@ func loadMCPPluginConfig(r *http.Request) error {
 	dump("[+] azureConfig: ", llmConfig.azureConfig)
 
 	return nil
-}
-
-func init() {
-	logger.Infof("[+] Initializing API Bridge Agnt plugin ...")
-	loadMCPPluginConfig(nil)
-	initMCPClient()
 }
