@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"slices"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
@@ -151,8 +152,12 @@ func processQueryWithMCP(nlq string) (string, error) {
 			dump("[+] Tool call: ", toolCall)
 			funcCall := toolCall.(*azopenai.ChatCompletionsFunctionToolCall).Function
 			// Call the tool
+			calledTool := []string{}
 			for name, item := range mcpConfig {
 				for _, tool := range item.Tools {
+					if slices.Contains(calledTool, tool.Name) {
+						continue
+					}
 					if tool.Name == *funcCall.Name {
 						logger.Infof("[+] Calling tool: (%s) from server (%s)", tool.Name, name)
 						// The arguments for the function come back as a JSON string
@@ -190,6 +195,8 @@ func processQueryWithMCP(nlq string) (string, error) {
 							Content:    azopenai.NewChatRequestToolMessageContent(result),
 							ToolCallID: toolCall.(*azopenai.ChatCompletionsFunctionToolCall).ID,
 						})
+
+						calledTool = append(calledTool, tool.Name)
 					}
 				}
 			}
