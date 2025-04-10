@@ -4,7 +4,7 @@ go 1.23.4
 
 toolchain go1.24.0
 
-replace github.com/ThinkInAIXYZ/go-mcp/client => ../../hackathon/go-mcp/client
+replace github.com/ThinkInAIXYZ/go-mcp => /media/sf_vmshared/hackathon/go-mcp
 
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai v0.7.2

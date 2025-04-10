@@ -284,7 +284,7 @@ func initMCPClient() {
 			logger.Fatalf("Either 'sse' or 'command' must be provided for the MCP Server configuration")
 		}
 
-		fmt.Printf("Initializing client")
+		logger.Infof("[+] Initializing client")
 		initRequest := mcp.InitializeRequest{}
 		initRequest.Params.ProtocolVersion = mcp.LATEST_PROTOCOL_VERSION
 		initRequest.Params.ClientInfo = mcp.Implementation{
@@ -296,12 +296,12 @@ func initMCPClient() {
 			logger.Fatalf("Failed to initialize: %v", err)
 		}
 		logger.Infof(
-			"Initialized with server: %s %s\n\n",
+			"[+] Initialized with server: %s %s\n\n",
 			initResult.ServerInfo.Name,
 			initResult.ServerInfo.Version,
 		)
 
-		fmt.Println("Listing available tools...")
+		logger.Infof("[+] Listing available tools...")
 		toolsRequest := mcp.ListToolsRequest{}
 		tools, err := config.Client.ListTools(context.TODO(), toolsRequest)
 		if err != nil {
@@ -309,7 +309,7 @@ func initMCPClient() {
 		}
 		config.Tools = tools.Tools
 		for _, tool := range tools.Tools {
-			fmt.Printf("- %s: %s\n", tool.Name, tool.Description)
+			logger.Infof("- %s: %s\n", tool.Name, tool.Description)
 		}
 		fmt.Println()
 	}
