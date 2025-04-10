@@ -8,23 +8,25 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
-	"github.com/ThinkInAIXYZ/go-mcp/client"
-	"github.com/ThinkInAIXYZ/go-mcp/protocol"
-	"github.com/ThinkInAIXYZ/go-mcp/transport"
+
+	"github.com/mark3labs/mcp-go/client"
+	"github.com/mark3labs/mcp-go/mcp"
 )
 
 type MCPServerConfig struct {
-	Command string            `json:"command"`
-	Args    []string          `json:"args"`
-	Env     map[string]string `json:"env"`
-	Client  *client.Client
-	Name    string `json:"name"`
+	Name    string   `json:"name"`
+	SSE     string   `json:"sse,omitempty"` // Either SSE or Command
+	Command string   `json:"command,omitempty"`
+	Args    []string `json:"args,omitempty"`
+	Env     []string `json:"env,omitempty"`
+
+	Client client.MCPClient
+	Tools  []mcp.Tool
 }
 
 var mcpConfig = map[string]*MCPServerConfig{}
@@ -74,18 +76,9 @@ func processQueryWithMCP(nlq string) (string, error) {
 	logger.Debugf("[+] processQueryWithMCP('%s') ...", nlq)
 
 	// Create the list of all available tools
-	availableTools := []*protocol.Tool{}
-	for name, item := range mcpConfig {
-		if item.Client != nil {
-			logger.Errorf("[+] processQueryWithMCP('%s') using mcpClient (%s)", nlq, name)
-			toolsResult, err := item.Client.ListTools(context.Background())
-			if err != nil {
-				log.Fatalf("[+] Failed to list tools for server (%s): %v", name, err)
-			}
-			availableTools = append(availableTools, toolsResult.Tools...)
-		} else {
-			logger.Errorf("[+] processQueryWithMCP('%s') mcpClient is nil for server (%s)", nlq, name)
-		}
+	availableTools := []mcp.Tool{}
+	for _, c := range mcpConfig {
+		availableTools = append(availableTools, c.Tools...)
 	}
 	dump("[+] Available tools: %+v\n", availableTools)
 
@@ -121,6 +114,7 @@ func processQueryWithMCP(nlq string) (string, error) {
 		Messages:       messages,
 		Tools:          llmTools,
 		Temperature:    to.Ptr[float32](0.0),
+		Seed:           to.Ptr[int64](42),
 	}, nil)
 	if err != nil {
 		logger.Errorf("[+] ERROR: %s", err)
@@ -131,7 +125,7 @@ func processQueryWithMCP(nlq string) (string, error) {
 
 	if len(resp.Choices) > 0 && *resp.Choices[0].FinishReason == azopenai.CompletionsFinishReasonToolCalls {
 		// Add the tool call message from the response to the messages. It allow to the LLM to match the response with the tool call
-		//messages = append(messages, resp.Choices[0].Message)
+		// messages = append(messages, resp.Choices[0].Message)
 		messages = append(messages, &azopenai.ChatRequestAssistantMessage{
 			ToolCalls: resp.Choices[0].Message.ToolCalls,
 		})
@@ -141,11 +135,7 @@ func processQueryWithMCP(nlq string) (string, error) {
 			funcCall := toolCall.(*azopenai.ChatCompletionsFunctionToolCall).Function
 			// Call the tool
 			for name, item := range mcpConfig {
-				if item.Client == nil {
-					continue
-				}
-				toolsResult, err := item.Client.ListTools(context.Background())
-				for _, tool := range toolsResult.Tools {
+				for _, tool := range item.Tools {
 					if tool.Name == *funcCall.Name {
 						logger.Infof("[+] Calling tool: (%s) from server (%s)", tool.Name, name)
 						// The arguments for the function come back as a JSON string
@@ -155,15 +145,32 @@ func processQueryWithMCP(nlq string) (string, error) {
 							logger.Errorf("[+] Failed to unmarshal function parameters: %v", err)
 							continue
 						}
-						callResult, err := item.Client.CallTool(context.Background(), protocol.NewCallToolRequest(*funcCall.Name, funcParams))
+
+						logger.Println("Doing tool request")
+						listTmpRequest := mcp.CallToolRequest{}
+						listTmpRequest.Params.Name = tool.Name
+						listTmpRequest.Params.Arguments = funcParams
+
+						callResult, err := item.Client.CallTool(context.TODO(), listTmpRequest)
 						if err != nil {
 							logger.Errorf("[+] Failed to call tool (%s): %v", tool.Name, err)
 							continue
 						}
-						b, _ := json.Marshal(callResult)
-						logger.Infof("[+] Tool call result: %+v\n", string(b))
+
+						result := ""
+
+						for _, content := range callResult.Content {
+							if textContent, ok := content.(mcp.TextContent); ok {
+								result = result + textContent.Text
+							} else {
+								jsonBytes, _ := json.MarshalIndent(content, "", "  ")
+								result = result + string(jsonBytes)
+							}
+						}
+
+						logger.Infof("[+] Tool call result: %+v\n", result)
 						messages = append(messages, &azopenai.ChatRequestToolMessage{
-							Content:    azopenai.NewChatRequestToolMessageContent(string(b)),
+							Content:    azopenai.NewChatRequestToolMessageContent(result),
 							ToolCallID: toolCall.(*azopenai.ChatCompletionsFunctionToolCall).ID,
 						})
 					}
@@ -190,39 +197,14 @@ func processQueryWithMCP(nlq string) (string, error) {
 		}
 
 	}
-	/*
-		if mcpClient == nil {
-			return "", fmt.Errorf("mcpClient is nil")
-		}
 
-		// List available tools
-		toolsResult, err := mcpClient.ListTools(context.Background())
-		if err != nil {
-			log.Fatalf("[+] Failed to list tools: %v", err)
-		}
-		b, _ := json.Marshal(toolsResult.Tools)
-		logger.Infof("[+] Available tools: %+v\n", string(b))
-
-		// Call tool
-		callResult, err := mcpClient.CallTool(
-			context.Background(),
-			protocol.NewCallToolRequest("current time", map[string]interface{}{
-				"timezone": "UTC",
-			}))
-		if err != nil {
-			log.Fatalf("[+] Failed to call tool: %v", err)
-		}
-		b, _ = json.Marshal(callResult)
-		logger.Infof("[+] Tool call result: %+v\n", string(b))
-		return string(b), nil
-	*/
 	return "", nil
 }
 
-func getChatCompletionFunctionDefinition(tool *protocol.Tool) (*azopenai.ChatCompletionsFunctionToolDefinitionFunction, error) {
+func getChatCompletionFunctionDefinition(tool mcp.Tool) (*azopenai.ChatCompletionsFunctionToolDefinitionFunction, error) {
 	jsonBytes, err := json.Marshal(tool.InputSchema)
 	if err != nil {
-		log.Fatalf("[+] Failed to marshal parameters of tool (%v): err=%v", tool, err)
+		logger.Fatalf("[+] Failed to marshal parameters of tool (%v): err=%v", tool, err)
 	}
 
 	// Create the function definition
@@ -240,67 +222,76 @@ func initMCPClient() {
 			continue // already initialized
 		}
 		logger.Debugf("[+] initMCPClient(%s) ...", name)
-		if config.Command != "" {
-			logger.Errorf("[+] initMCPClient(%s) stdio not supported for now, skipping", name)
-			continue
-		}
-		if config.Args == nil || len(config.Args) == 0 {
-			logger.Errorf("[+] initMCPClient(%s) args is empty, skipping", name)
-			continue
-		}
-		// Create transport client (using SSE in this example)
-		logger.Infof("[+] initMCPClient(%s): Using SSE transport to %s\n", name, config.Args[0])
-		transportClient, err := transport.NewSSEClientTransport(config.Args[0])
-		if err != nil {
-			log.Fatalf("[+] Failed to create transport client: %v", err)
+
+		if config.SSE != "" {
+			logger.Infof("[+] initMCPClient(%s): Using SSE transport to %s\n", name, config.SSE)
+
+			client, err := client.NewSSEMCPClient(config.SSE)
+			if err != nil {
+				logger.Fatalf("Failed to create client: %v", err)
+			}
+			defer client.Close()
+
+			err = client.Start(context.TODO())
+			if err != nil {
+				logger.Fatalf("Failed to start client")
+			}
+
+			config.Client = client
+		} else if config.Command != "" {
+			logger.Infof("[+] initMCPClient(%s): Using stdio transport for command %s\n", name, config.Command)
+
+			client, err := client.NewStdioMCPClient(config.Command, config.Env, config.Args...)
+			if err != nil {
+				logger.Fatalf("Failed to create client: %v", err)
+			}
+			defer client.Close()
+
+			config.Client = client
+		} else {
+			logger.Fatalf("Either 'sse' or 'command' must be provided for the MCP Server configuration")
 		}
 
-		// Create MCP client using transport
-		config.Client, err = client.NewClient(transportClient, client.WithClientInfo(protocol.Implementation{
-			Name:    name,
+		fmt.Printf("Initializing client")
+		initRequest := mcp.InitializeRequest{}
+		initRequest.Params.ProtocolVersion = mcp.LATEST_PROTOCOL_VERSION
+		initRequest.Params.ClientInfo = mcp.Implementation{
+			Name:    "api-bridge-agent",
 			Version: "1.0.0",
-		}))
-		if err != nil {
-			log.Fatalf("[+] Failed to create MCP client: %v", err)
 		}
-		//defer mcpClient.Close()
+		initResult, err := config.Client.Initialize(context.TODO(), initRequest)
+		if err != nil {
+			logger.Fatalf("Failed to initialize: %v", err)
+		}
+		logger.Infof(
+			"Initialized with server: %s %s\n\n",
+			initResult.ServerInfo.Name,
+			initResult.ServerInfo.Version,
+		)
 
-		// List available tools
-		toolsResult, err := config.Client.ListTools(context.Background())
+		fmt.Println("Listing available tools...")
+		toolsRequest := mcp.ListToolsRequest{}
+		tools, err := config.Client.ListTools(context.TODO(), toolsRequest)
 		if err != nil {
-			log.Fatalf("[+] Failed to list tools: %v", err)
+			logger.Fatalf("Failed to list tools: %v", err)
 		}
-		b, _ := json.Marshal(toolsResult.Tools)
-		logger.Infof("[+] Available tools: %+v\n", string(b))
-
-		// Call tool
-		/*callResult, err := config.Client.CallTool(
-			context.Background(),
-			protocol.NewCallToolRequest("current time", map[string]interface{}{
-				"timezone": "UTC",
-			}))
-		if err != nil {
-			log.Fatalf("[+] Failed to call tool: %v", err)
+		config.Tools = tools.Tools
+		for _, tool := range tools.Tools {
+			fmt.Printf("- %s: %s\n", tool.Name, tool.Description)
 		}
-		b, _ = json.Marshal(callResult)
-		logger.Infof("[+] Tool call result: %+v\n", string(b))*/
+		fmt.Println()
 	}
 }
 
 func loadMCPPluginConfig(r *http.Request) error {
 	logger.Debugf("[+] loadMCPPluginConfig ...")
 	configValue := `{
-		"current-time-v2-server": {
-			"command": "",
-			"args": ["http://127.0.0.1:8088/sse"]
+		"weather-sse": {
+			"sse": "http://127.0.0.1:8000/sse"
 		},
-		"weather": {
-			"command": "python",
-			"args": ["../weather-server-python/weather.py"]
-		},
-		"git": {
-			"command": "python",
-			"args": ["../servers/git/src/mcp_server_git/server.py", "--repository", "/media/sf_vmshared/api-bridge-agnt"]
+		"weather-stdio": {
+			"command": "uvx",
+			"args": ["/Users/jubarbot/work/agntcy/api-bridge-agnt/plugins/weather-server-python"]
 		},
 		"github": {
 			"command": "docker",
@@ -312,16 +303,13 @@ func loadMCPPluginConfig(r *http.Request) error {
 				"GITHUB_PERSONAL_ACCESS_TOKEN",
 				"ghcr.io/github/github-mcp-server"
 			],
-			"env": {
-				"GITHUB_PERSONAL_ACCESS_TOKEN": ""
-			}
+			"env": ["GITHUB_PERSONAL_ACCESS_TOKEN=1234"]
 		}
 	}`
 	err := json.Unmarshal([]byte(configValue), &mcpConfig)
 	if err != nil {
 		logger.Fatalf("[+] conversion error for acpPluginConfig: %s", err)
 	}
-	dump("[+] mcpConfig :", mcpConfig)
 
 	llmConfigData := map[string]any{}
 	llmConfig.azureConfig = MCPAzureConfig{
