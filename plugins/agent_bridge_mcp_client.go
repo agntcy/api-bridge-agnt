@@ -9,7 +9,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"slices"
+	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
@@ -98,7 +100,7 @@ func processQueryWithMCP(nlq string) (string, error) {
 	for _, c := range mcpConfig {
 		availableTools = append(availableTools, c.Tools...)
 	}
-	dump("[+] Available tools: %+v\n", availableTools)
+	logger.Infof("[+] Nb Available tools: %+v\n", len(availableTools))
 
 	if len(availableTools) == 0 {
 		logger.Errorf("[+] processQueryWithMCP('%s') no available tools", nlq)
@@ -179,6 +181,10 @@ func processQueryWithMCP(nlq string) (string, error) {
 						callResult, err := item.Client.CallTool(context.TODO(), listTmpRequest)
 						if err != nil {
 							logger.Errorf("[+] Failed to call tool (%s): %v", tool.Name, err)
+							messages = append(messages, &azopenai.ChatRequestToolMessage{
+								Content:    azopenai.NewChatRequestToolMessageContent("An error occurred while calling the tool"),
+								ToolCallID: toolCall.(*azopenai.ChatCompletionsFunctionToolCall).ID,
+							})
 							continue
 						}
 
@@ -259,6 +265,20 @@ func initMCPClient() {
 		}
 		logger.Debugf("[+] initMCPClient(%s) ...", name)
 
+		if config.Env != nil && len(config.Env) > 0 {
+			for index, env := range config.Env {
+				tokens := strings.Split(env, "=")
+				if len(tokens) != 2 {
+					continue
+				}
+				if len(tokens[1]) > 0 && tokens[1][0] == '$' && os.Getenv(tokens[1][1:]) != "" {
+					tokens[1] = os.Getenv(tokens[1][1:])
+					config.Env[index] = fmt.Sprintf("%s=%s", tokens[0], tokens[1])
+				}
+			}
+			logger.Infof("[+] initMCPClient(%s): Using env %v\n", name, config.Env)
+		}
+
 		if config.SSE != "" {
 			logger.Infof("[+] initMCPClient(%s): Using SSE transport to %s\n", name, config.SSE)
 
@@ -309,7 +329,7 @@ func initMCPClient() {
 		}
 		config.Tools = tools.Tools
 		for _, tool := range tools.Tools {
-			logger.Infof("- %s: %s\n", tool.Name, tool.Description)
+			logger.Infof("   - %s: %s\n", tool.Name, tool.Description)
 		}
 		fmt.Println()
 	}
@@ -342,6 +362,30 @@ func loadMCPPluginConfig(r *http.Request) error {
 
 	mcpTykConfig := TykMCPConfig{}
 	err = json.Unmarshal([]byte(configValue), &mcpTykConfig)
+	logger.Debugf("[+] loadMCPPluginConfig ...")
+	configValue := `{
+		"weather": {
+			"command": "poetry",
+			"args": [
+				"run",
+				"python",
+				"../../../mcp/weather-server-python/weather.py"
+			]
+		},
+		"github": {
+			"command": "docker",
+			"args": [
+				"run",
+				"-i",
+				"--rm",
+				"-e",
+				"GITHUB_PERSONAL_ACCESS_TOKEN",
+				"ghcr.io/github/github-mcp-server"
+			],
+			"env": ["GITHUB_PERSONAL_ACCESS_TOKEN=$GITHUB_PERSONAL_ACCESS_TOKEN"]
+		}
+	}`
+	err := json.Unmarshal([]byte(configValue), &mcpConfig)
 	if err != nil {
 		logger.Fatalf("[+] conversion error for acpPluginConfig: %s", err)
 	}
