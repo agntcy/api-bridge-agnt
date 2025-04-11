@@ -23,25 +23,38 @@
             "enabled": true,
             "value": {
               "mcpServers": {
-            		"weather-sse": {
-            			"sse": "http://127.0.0.1:8000/sse"
-            		},
-            		"weather-stdio": {
-            			"command": "uvx",
-            			"args": ["/Users/jubarbot/work/agntcy/api-bridge-agnt/plugins/weather-server-python"]
-            		},
-            		"github": {
-            			"command": "docker",
-            			"args": [
-            				"run",
-            				"-i",
-            				"--rm",
-            				"-e",
-            				"GITHUB_PERSONAL_ACCESS_TOKEN",
-            				"ghcr.io/github/github-mcp-server"
-            			],
-            			"env": ["GITHUB_PERSONAL_ACCESS_TOKEN=1234"]
-            		}
+                "weather": {
+                  "command": "poetry",
+                  "args": [
+                    "run",
+                    "python",
+                    "../../../mcp/weather-server-python/weather.py"
+                  ]
+                },
+                "git": {
+                  "command": "python",
+                  "args": ["../servers/git/src/mcp_server_git/server.py", "--repository", "/media/sf_vmshared/api-bridge-agnt"]
+                },
+                "github": {
+                  "command": "docker",
+                  "args": [
+                    "run",
+                    "-i",
+                    "--rm",
+                    "-e",
+                    "GITHUB_PERSONAL_ACCESS_TOKEN",
+                    "ghcr.io/github/github-mcp-server"
+                  ],
+                  "env": ["GITHUB_PERSONAL_ACCESS_TOKEN=$GITHUB_PERSONAL_ACCESS_TOKEN"]
+                },
+                "resend": {
+                  "command": "node",
+                  "args": [
+                    "/media/sf_vmshared/mcp/mcp-send-email/build/index.js", 
+                    "--key=re_GtFPj431_DchhGWm2bw2hcQTmmLL8ZuTX", 
+                    "--sender=mcp.integration.test@resend.dev"
+                  ]
+                }
               }
             }
           },

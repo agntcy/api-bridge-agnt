@@ -21,6 +21,8 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
+const MAX_RESULT = 3
+
 type MCPServers map[string]*MCPServerConfig
 
 type TykMCPConfig struct {
@@ -113,9 +115,6 @@ func processQueryWithMCP(nlq string) (string, error) {
 
 	// Ask to the LLM
 	messages := []azopenai.ChatRequestMessageClassification{
-		&azopenai.ChatRequestSystemMessage{
-			Content: azopenai.NewChatRequestSystemMessageContent("You are answering natural language queries using tools. Do not invent. Use a neutral tone."),
-		},
 		&azopenai.ChatRequestUserMessage{
 			Content: azopenai.NewChatRequestUserMessageContent(nlq),
 		},
@@ -143,10 +142,13 @@ func processQueryWithMCP(nlq string) (string, error) {
 		logger.Errorf("[+] ERROR: %s", err)
 		return "", err
 	}
-	logger.Info("[+] -------------------------")
-	dump("[+] LLM response: ", resp)
 
-	if len(resp.Choices) > 0 && *resp.Choices[0].FinishReason == azopenai.CompletionsFinishReasonToolCalls {
+	round := 0
+	logger.Info("[+] -------------------------")
+	dump(fmt.Sprintf("[+] LLM response round %v: ", round), resp)
+
+	for len(resp.Choices) > 0 && *resp.Choices[0].FinishReason == azopenai.CompletionsFinishReasonToolCalls && round < MAX_RESULT {
+		round++
 		// Add the tool call message from the response to the messages. It allow to the LLM to match the response with the tool call
 		// messages = append(messages, resp.Choices[0].Message)
 		messages = append(messages, &azopenai.ChatRequestAssistantMessage{
@@ -211,21 +213,28 @@ func processQueryWithMCP(nlq string) (string, error) {
 			}
 		}
 		logger.Info("[+] -------------------------")
-		dump("[+] messages: ", messages)
+		dump(fmt.Sprintf("[+] messages round %v: ", round), messages)
 		// Ask to the LLM again with the tool call result
-		resp, err := llmConfig.azureClient.GetChatCompletions(context.TODO(), azopenai.ChatCompletionsOptions{
+		resp, err = llmConfig.azureClient.GetChatCompletions(context.TODO(), azopenai.ChatCompletionsOptions{
 			DeploymentName: &llmConfig.azureConfig.ModelDeployment,
 			Messages:       messages,
 			Tools:          llmTools,
 			Temperature:    to.Ptr[float32](0.0),
+			Seed:           to.Ptr[int64](42),
 		}, nil)
 		if err != nil {
 			logger.Errorf("[+] ERROR: %s", err)
 			return "", err
 		}
+
 		logger.Info("[+] -------------------------")
-		dump("[+] LLM Final response: ", resp)
-		if len(resp.Choices) > 0 && resp.Choices[0].Message != nil && resp.Choices[0].Message.Content != nil {
+		dump(fmt.Sprintf("[+] LLM response round %v: ", round), resp)
+		if len(resp.Choices) > 0 && *resp.Choices[0].FinishReason == azopenai.CompletionsFinishReasonStopped {
+			if resp.Choices[0].Message == nil || resp.Choices[0].Message.Content == nil {
+				logger.Errorf("[+] ERROR: no content in the response")
+				return "", fmt.Errorf("no content in the response")
+			}
+			logger.Infof("[+] Stop is detected, final response is (%v) in %v round", *resp.Choices[0].Message.Content, round)
 			return *resp.Choices[0].Message.Content, nil
 		}
 
@@ -336,7 +345,9 @@ func initMCPClient() {
 }
 
 func loadMCPPluginConfig(r *http.Request) error {
-	apidef := getOASDefinition(r)
+	logger.Debugf("[+] loadMCPPluginConfig ...")
+
+	/*apidef := getOASDefinition(r)
 	middleware := apidef.GetTykMiddleware()
 	if middleware == nil {
 		err := fmt.Errorf("Tyk middleware definition is nil")
@@ -358,11 +369,7 @@ func loadMCPPluginConfig(r *http.Request) error {
 	configValue, err := json.Marshal(globalPluginConfig.Data.Value)
 	if err != nil {
 		logger.Fatalf("[+] Invalid MCP Configuration: %s", err)
-	}
-
-	mcpTykConfig := TykMCPConfig{}
-	err = json.Unmarshal([]byte(configValue), &mcpTykConfig)
-	logger.Debugf("[+] loadMCPPluginConfig ...")
+	}*/
 	configValue := `{
 		"weather": {
 			"command": "poetry",
@@ -372,6 +379,16 @@ func loadMCPPluginConfig(r *http.Request) error {
 				"../../../mcp/weather-server-python/weather.py"
 			]
 		},
+		"git": {
+        	"command": "poetry",
+        	"args": [
+				"run",
+				"python",
+				"../../../mcp/servers/git/src/mcp_server_git/server.py", 
+				"--repository", 
+				"/media/sf_vmshared/api-bridge-agnt"
+			]
+      	},
 		"github": {
 			"command": "docker",
 			"args": [
@@ -383,13 +400,25 @@ func loadMCPPluginConfig(r *http.Request) error {
 				"ghcr.io/github/github-mcp-server"
 			],
 			"env": ["GITHUB_PERSONAL_ACCESS_TOKEN=$GITHUB_PERSONAL_ACCESS_TOKEN"]
+		},
+		"resend": {
+			"command": "node",
+			"args": [
+				"/media/sf_vmshared/mcp/mcp-send-email/build/index.js", 
+				"--key=re_GtFPj431_DchhGWm2bw2hcQTmmLL8ZuTX", 
+				"--sender=mcp.integration.test@resend.dev"
+			]
 		}
 	}`
 	err := json.Unmarshal([]byte(configValue), &mcpConfig)
+
+	/*mcpTykConfig := TykMCPConfig{}
+	err = json.Unmarshal([]byte(configValue), &mcpTykConfig)
 	if err != nil {
 		logger.Fatalf("[+] conversion error for acpPluginConfig: %s", err)
 	}
-	mcpConfig = mcpTykConfig.MCPServers
+	mcpConfig = mcpTykConfig.MCPServers*/
+	dump("[+] mcpConfig :", mcpConfig)
 
 	llmConfigData := map[string]any{}
 	llmConfig.azureConfig = MCPAzureConfig{
@@ -418,4 +447,10 @@ func loadMCPPluginConfig(r *http.Request) error {
 	dump("[+] azureConfig: ", llmConfig.azureConfig)
 
 	return nil
+}
+
+func init() {
+	logger.Infof("[+] Initializing API Bridge Agnt plugin ...")
+	loadMCPPluginConfig(nil)
+	initMCPClient()
 }
