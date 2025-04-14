@@ -9,7 +9,7 @@ TARGET_OS   ?= darwin
 TARGET_ARCH ?= arm64
 
 # Version for https://github.com/kelindar/search.git
-SEARCH_VERSION := v0.3.0
+SEARCH_VERSION := v0.4.0
 SEARCH_LIB     ?= libllama_go.dylib
 
 # Plugin configuration
