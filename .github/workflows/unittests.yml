@@ -14,7 +14,7 @@ permissions:
   contents: read
 
 env:
-  TYK_VERSION: v5.8.0-alpha8
+  TYK_VERSION: v5.8.0
   TARGET_OS: linux
 
 jobs:

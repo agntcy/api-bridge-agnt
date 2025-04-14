@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Build settings
-TYK_VERSION ?= v5.8.0-alpha8
+TYK_VERSION ?= v5.8.0
 # Options: linux, darwin
 TARGET_OS   ?= darwin
 # Options: amd64, arm64
