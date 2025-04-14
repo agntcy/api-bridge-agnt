@@ -1,6 +1,6 @@
-go 1.23.6
+go 1.24.2
 
 use (
 	./plugins
-	./tyk-release-v5.8.0-alpha8
+	./tyk-release-v5.8.0
 )
