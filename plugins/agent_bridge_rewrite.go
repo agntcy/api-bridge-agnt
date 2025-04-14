@@ -380,8 +380,8 @@ func llmCall(ctx context.Context, systemPrompt string, data string, schemaRespon
 
 	chatCompletions := azopenai.ChatCompletionsOptions{
 		Messages: []azopenai.ChatRequestMessageClassification{
-			&azopenai.ChatRequestAssistantMessage{
-				Content: azopenai.NewChatRequestAssistantMessageContent(systemPrompt),
+			&azopenai.ChatRequestSystemMessage{
+				Content: azopenai.NewChatRequestSystemMessageContent(systemPrompt),
 			},
 			&azopenai.ChatRequestUserMessage{
 				Content: azopenai.NewChatRequestUserMessageContent(data),
