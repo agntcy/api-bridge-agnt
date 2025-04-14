@@ -4,9 +4,9 @@
 # Build settings
 TYK_VERSION ?= v5.8.0
 # Options: linux, darwin
-TARGET_OS   ?= darwin
+TARGET_OS ?= $(shell go env GOOS)
 # Options: amd64, arm64
-TARGET_ARCH ?= arm64
+TARGET_ARCH ?= $(shell go env GOARCH)
 
 # Version for https://github.com/kelindar/search.git
 SEARCH_VERSION := v0.4.0
@@ -16,7 +16,7 @@ SEARCH_LIB     ?= libllama_go.dylib
 PLUGIN_NAME        := agent-bridge-plugin
 FULL_PLUGIN_NAME   := $(PLUGIN_NAME)_$(TYK_VERSION)_$(TARGET_OS)_$(TARGET_ARCH)
 TYK_COMPILER_IMAGE_PLATFORM := linux/amd64
-TYK_COMPILER_IMAGE := tykio/tyk-plugin-compiler:v$(TYK_VERSION)
+TYK_COMPILER_IMAGE := tykio/tyk-plugin-compiler:$(TYK_VERSION)
 
 PROJECT_ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 REQUIRED_BINS := docker go git curl jq cmake
@@ -41,7 +41,7 @@ build_release:
 	docker run --rm \
 	  --platform=$(TYK_COMPILER_IMAGE_PLATFORM) \
 	  --mount type=bind,src=./plugins,dst=/plugin-source \
-	  $(TYK_COMPILER_IMAGE) $(PLUGIN_NAME) _$$(date +%s) $(TARGET_OS) $(TARGET_ARCH)
+	  $(TYK_COMPILER_IMAGE) $(PLUGIN_NAME) _$$(date +%s)
 
 test: search-release-$(SEARCH_VERSION)/build/lib/$(SEARCH_LIB)
 	$(LIB_ENV_VAR)=$(PROJECT_ROOT)/search-release-$(SEARCH_VERSION)/build/lib go test -v ./plugins
