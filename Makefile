@@ -25,8 +25,10 @@ $(foreach bin,$(REQUIRED_BINS),\
 
 ifeq ($(TARGET_OS), linux)
     LIB_ENV_VAR = LD_LIBRARY_PATH
+    SEARCH_LIB  = libllama_go.so
 else
     LIB_ENV_VAR = DYLD_LIBRARY_PATH
+    SEARCH_LIB  = libllama_go.dylib
 endif
 
 .PHONY: default all build_release build setup clean setup \
@@ -71,7 +73,7 @@ search-release-$(SEARCH_VERSION)/README.md: download_models_for_semrouter
 
 build_search_lib search-release-$(SEARCH_VERSION)/build/lib/$(SEARCH_LIB): search-release-$(SEARCH_VERSION)/README.md
 	-mkdir -p "search-release-$(SEARCH_VERSION)/build"
-	cd "search-release-$(SEARCH_VERSION)/build" && cmake -DCMAKE_BUILD_TYPE=Release ..
+	cd "search-release-$(SEARCH_VERSION)/build" && cmake -DGGML_NATIVE=OFF -DBUILD_SHARED_LIBS=ON -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc -DCMAKE_BUILD_TYPE=Release ..
 	cd "search-release-$(SEARCH_VERSION)/build" && cmake --build . --config Release
 
 tyk-release-$(TYK_VERSION)/$(SEARCH_LIB): search-release-$(SEARCH_VERSION)/build/lib/$(SEARCH_LIB)
@@ -91,7 +93,7 @@ start_redis: deploy/docker-compose.yaml
 
 build_plugin plugins/$(FULL_PLUGIN_NAME).so: plugins/*.go plugins/go.mod tyk-release-$(TYK_VERSION)/go.mod
 	cd plugins && go mod tidy -go=$$(go mod edit -json ../tyk-release-$(TYK_VERSION)/go.mod | jq -r .Go)
-	GOOS=$(TARGET_OS) GOARCH=$(TARGET_ARCH) go build -C plugins -trimpath -buildmode=plugin -o $(FULL_PLUGIN_NAME).so .
+	CGO_ENABLED='1' GOOS=$(TARGET_OS) GOARCH=$(TARGET_ARCH) go build -C plugins -trimpath -buildmode=plugin -o $(FULL_PLUGIN_NAME).so .
 
 install_plugin tyk-release-$(TYK_VERSION)/middleware/agent-bridge-plugin.so: plugins/$(FULL_PLUGIN_NAME).so
 	cp plugins/$(FULL_PLUGIN_NAME).so ./tyk-release-$(TYK_VERSION)/middleware/agent-bridge-plugin.so
