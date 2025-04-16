@@ -4,6 +4,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -21,6 +22,7 @@ const (
 	CONTENT_TYPE_NLQ          = "application/nlq"
 	HEADER_X_NL_QUERY_ENABLED = "X-Nl-Query-Enabled"
 	HEADER_X_NL_RESPONSE_TYPE = "X-Nl-Response-Type"
+	HEADER_X_NL_CONFIG        = "X-Nl-Config"
 
 	RESPONSE_TYPE_NL       = "nl"       // Rewrite the response to Natural Language
 	RESPONSE_TYPE_UPSTREAM = "upstream" // Keep the response as it is
@@ -41,10 +43,31 @@ var logger = log.Get()
 
 func SelectAndRewrite(rw http.ResponseWriter, r *http.Request) {
 	logger.Debugf("[+] Inside SelectAndRewrite ...")
-	apiConfig, err := initPluginFromRequest(r)
+	apiConfig, err := getPluginFromRequest(r)
 	if err != nil {
 		logger.Debugf("[+] Failed to init plugin from request: %s", err)
 		http.Error(rw, INTERNAL_ERROR_MSG, http.StatusInternalServerError)
+		return
+	}
+
+	// Check if request is for configuration
+	_, exists := r.Header[HEADER_X_NL_CONFIG]
+	if exists {
+		// implement the delete API (for cross API semantic routing support)
+		if r.Method == "DELETE" {
+			logger.Debugf("[+] Delete API '%s' for cross API semantic routing support ...", apiConfig.APIID)
+			deletePluginConfig(apiConfig.APIID)
+		}
+		// implement the update API (for cross API semantic routing support)
+		if r.Method == "PUT" {
+			logger.Debugf("[+] Update API '%s' for cross API semantic routing support ...", apiConfig.APIID)
+			if err := updatePluginConfig(apiConfig.APIID, r); err != nil {
+				logger.Errorf("[+] Error while updating the plugin config: %s", err)
+				http.Error(rw, INTERNAL_ERROR_MSG, http.StatusInternalServerError)
+				return
+			}
+		}
+		rw.WriteHeader(http.StatusOK)
 		return
 	}
 
@@ -114,7 +137,7 @@ func SelectAndRewrite(rw http.ResponseWriter, r *http.Request) {
 }
 
 func RewriteQueryToOas(rw http.ResponseWriter, r *http.Request) {
-	_, err := initPluginFromRequest(r)
+	_, err := getPluginFromRequest(r)
 	if err != nil {
 		http.Error(rw, INTERNAL_ERROR_MSG, http.StatusInternalServerError)
 		return
@@ -154,7 +177,7 @@ func RewriteQueryToOas(rw http.ResponseWriter, r *http.Request) {
 }
 
 func RewriteResponseToNl(rw http.ResponseWriter, res *http.Response, req *http.Request) {
-	_, err := initPluginFromRequest(req)
+	_, err := getPluginFromRequest(req)
 	if err != nil {
 		http.Error(rw, INTERNAL_ERROR_MSG, http.StatusInternalServerError)
 		return
@@ -203,7 +226,7 @@ func RewriteResponseToNl(rw http.ResponseWriter, res *http.Response, req *http.R
 func QueryEndpointSelection(rw http.ResponseWriter, r *http.Request) {
 	logger.Debugf("[+] Entering QueryEndpointSelection ...")
 
-	apiConfig, err := initPluginFromRequest(r)
+	apiConfig, err := getPluginFromRequest(r)
 	if err != nil {
 		logger.Debugf("[+] Failed to init plugin from request: %s", err)
 		http.Error(rw, INTERNAL_ERROR_MSG, http.StatusInternalServerError)
@@ -244,7 +267,13 @@ func QueryEndpointSelection(rw http.ResponseWriter, r *http.Request) {
 }
 
 func init() {
-	logger.Infof("[+] Initializing API Bridge Agnt plugin ...")
+	logger.Infof("[+] Initializing API Bridge Agnt plugin (APIs)...")
+
+	// Init Redis store, if needed
+	if agentBridgeStore == nil {
+		agentBridgeStore = getStorageForPlugin(context.TODO())
+	}
+
 }
 
 func main() {}
