@@ -35,7 +35,7 @@
         }
     },
     "proxy": {
-        "listen_path": "/acp/",
+        "listen_path": "/aba/",
         "target_url": "",
         "strip_listen_path": true
     },
