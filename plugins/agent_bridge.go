@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"mime"
 	"net/http"
 	"strings"
 
@@ -41,6 +42,15 @@ const (
 
 var logger = log.Get()
 
+// isNLQContentType parses a Content-Type header and returns true if it denotes application/nlq
+func isNLQContentType(contentType string) bool {
+	mediaType, _, err := mime.ParseMediaType(contentType)
+	if err != nil {
+		return false
+	}
+	return strings.EqualFold(mediaType, CONTENT_TYPE_NLQ)
+}
+
 func SelectAndRewrite(rw http.ResponseWriter, r *http.Request) {
 	logger.Debugf("[+] Inside SelectAndRewrite ...")
 	apiConfig, err := getPluginFromRequest(r)
@@ -71,8 +81,8 @@ func SelectAndRewrite(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// POST and Content-Type: application/nlq are expected
-	if !(r.Method == "POST" && r.Header.Get("Content-Type") == CONTENT_TYPE_NLQ) {
+	// Only proceed for POST with Content-Type: application/nlq (parameters are allowed)
+	if r.Method != http.MethodPost || !isNLQContentType(r.Header.Get("Content-Type")) {
 		logger.Debugf("[+] Query is not POST or Content-Type is not %s, ignoring ...", CONTENT_TYPE_NLQ)
 		return
 	}

@@ -58,8 +58,8 @@ func ProcessACPQuery(rw http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// POST and Content-Type: application/nlq are expected
-	if !(r.Method == "POST" && r.Header.Get("Content-Type") == CONTENT_TYPE_NLQ) {
+	// Only proceed for POST with Content-Type: application/nlq (parameters are allowed)
+	if r.Method != http.MethodPost || !isNLQContentType(r.Header.Get("Content-Type")) {
 		logger.Debugf("[+] Query is not POST or Content-Type is not %s, ignoring ...", CONTENT_TYPE_NLQ)
 		return
 	}
