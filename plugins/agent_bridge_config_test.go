@@ -34,6 +34,7 @@ func TestConfigParseConfigData(t *testing.T) {
 				SelectModelEmbedding: DEFAULT_MODEL_EMBEDDINGS_MODEL,
 				SelectModelsPath:     "models",
 				APIID:                "httpbin",
+				RelevanceThreshold:   DEFAULT_RELEVANCE_THRESHOLD,
 			},
 		},
 		{
@@ -49,6 +50,7 @@ func TestConfigParseConfigData(t *testing.T) {
 				SelectModelEmbedding: DEFAULT_MODEL_EMBEDDINGS_MODEL,
 				SelectModelsPath:     "models",
 				APIID:                "httpbin",
+				RelevanceThreshold:   DEFAULT_RELEVANCE_THRESHOLD,
 			},
 		},
 	}

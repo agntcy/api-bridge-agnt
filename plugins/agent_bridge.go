@@ -31,7 +31,7 @@ const (
 )
 
 const (
-	RELEVANCE_THRESHOLD = 0.5
+	DEFAULT_RELEVANCE_THRESHOLD = 0.5
 )
 
 const (
@@ -99,7 +99,7 @@ func SelectAndRewrite(rw http.ResponseWriter, r *http.Request) {
 		http.Error(rw, INTERNAL_ERROR_MSG, http.StatusInternalServerError)
 		return
 
-	} else if matchingOperation == nil || (matchingScore < RELEVANCE_THRESHOLD) {
+	} else if matchingOperation == nil || matchingScore < apiConfig.RelevanceThreshold {
 		logger.Debugf("[+] No matching operation found")
 		http.Error(rw, "No matching operation found", http.StatusNotFound)
 		return
@@ -273,7 +273,6 @@ func init() {
 	if agentBridgeStore == nil {
 		agentBridgeStore = getStorageForPlugin(context.TODO())
 	}
-
 }
 
 func main() {}

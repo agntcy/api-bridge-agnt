@@ -158,7 +158,7 @@ func TestEndpointSelection(t *testing.T) {
 
 				assert.Nil(t, err)
 				assert.Equal(t, tt.ExpectedOperation, *matchingOperation)
-				assert.Equal(t, tt.ReachThreshold, (matchingScore >= RELEVANCE_THRESHOLD))
+				assert.Equal(t, tt.ReachThreshold, (matchingScore >= DEFAULT_RELEVANCE_THRESHOLD))
 			} else {
 				t.Skip("No plugin config found for api: " + tt.TargetApiID)
 			}

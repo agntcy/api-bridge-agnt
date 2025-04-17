@@ -48,6 +48,39 @@ curl 'http://localhost:8080/github/' \
   -d 'List the first issue for the repository named tyk owned by TykTechnologies with the label bug'
 ```
 
+## Plugin Configuration
+
+You can tune the operation matching sensitivity per API by setting the `relevanceThreshold` (a float between 0 and 1, default is 0.5) in your Tyk pluginConfig. A higher value requires a stronger semantic match.
+
+Example plugin configuration snippet in your API definition:
+```json
+[...]
+  "middleware": {
+    "global": {
+      "pluginConfig": {
+        "data": {
+          "enabled": true,
+          "value": {
+            "azureConfig": {
+              "openAIKey": "YOUR_OPENAI_KEY",
+              "modelDeployment": "gpt-4o-mini"
+            },
+            "selectOperations": {
+              "getIssue": {
+                "x-nl-input-examples": [
+                  "List the first issue for the repository named tyk owned by TykTechnologies with the label bug"
+                ]
+              }
+            },
+            "relevanceThreshold": 0.7
+          }
+        }
+      }
+    }
+  }
+[...]
+```
+
 ## Contributing
 
 Contributions are what make the open source community such an amazing place to
