@@ -58,6 +58,8 @@ type PluginDataConfig struct {
 	SelectModelEmbedding string                        `json:"selectModelEmbedding"`
 	SelectModelsPath     string                        `json:"selectModelsPath"`
 	LlmConfig            *NLAPIConfig                  `json:"llmConfig"`
+	// RelevanceThreshold is the minimum matching score to select an operation; default is 0.5
+	RelevanceThreshold float64 `json:"relevanceThreshold,omitempty"`
 
 	APIID      string
 	ListenPath string
@@ -98,6 +100,15 @@ func parseConfigData(apiId string, configData map[string]any) (*PluginDataConfig
 		azureConfigData = map[string]any{}
 	}
 
+	// Determine relevance threshold (default or overridden)
+	threshold := DEFAULT_RELEVANCE_THRESHOLD
+	if v, exists := configData["relevanceThreshold"]; exists {
+		if f, ok := v.(float64); ok {
+			threshold = f
+		} else {
+			logger.Warningf("[+] Invalid type for relevanceThreshold: %T; using default %f", v, threshold)
+		}
+	}
 	pluginDataConfig := &PluginDataConfig{
 		AzureConfig: AzureConfig{
 			OpenAIEndpoint:  getConfigValue(DEFAULT_OPENAI_ENDPOINT, azureConfigData, "openAIEndpoint", "OPENAI_ENDPOINT"),
@@ -107,6 +118,7 @@ func parseConfigData(apiId string, configData map[string]any) (*PluginDataConfig
 		SelectOperations:     map[string]*AIExtensionConfig{},
 		SelectModelEmbedding: DEFAULT_MODEL_EMBEDDINGS_MODEL,
 		SelectModelsPath:     DEFAULT_MODEL_EMBEDDINGS_PATH,
+		RelevanceThreshold:   threshold,
 
 		APIID: apiId,
 	}
