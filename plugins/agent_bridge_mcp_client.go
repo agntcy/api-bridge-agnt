@@ -57,15 +57,27 @@ var llmConfig = MCPLLMConfig{}
 
 func ProcessMCPQuery(rw http.ResponseWriter, r *http.Request) {
 	logger.Debugf("[+] Inside ProcessMCPQuery ...")
+
 	if r.URL.Path == "/mcp/init" || len(mcpConfig) == 0 {
 		deinitMCPClient()
 		mcpConfig = MCPServers{}
-		loadMCPPluginConfig(r)
-		initMCPClient()
+		err := loadMCPPluginConfig(r)
+		if err != nil {
+			logger.Errorf("[+] Failed to load MCP plugin config: %s", err)
+			http.Error(rw, "Error while loading MCP configuration", http.StatusInternalServerError)
+			return
+		}
+		err = initMCPClient()
+		if err != nil {
+			logger.Errorf("[+] Failed to initialize MCP servers: %s", err)
+			http.Error(rw, "Error while loading MCP sub-system", http.StatusInternalServerError)
+			return
+		}
 		rw.WriteHeader(http.StatusOK)
-		_, _ = rw.Write([]byte("MCP Server Initialized"))
+		_, _ = rw.Write([]byte("MCP Server(s) Initialized"))
 		return
 	}
+
 	// POST and Content-Type: application/nlq are expected
 	if r.URL.Path != "/mcp/" || r.Method != http.MethodPost || !isNLQContentType(r.Header.Get("Content-Type")) {
 		logger.Debugf("[+] Query is not POST or Content-Type is not %s, ignoring ...", CONTENT_TYPE_NLQ)
@@ -151,7 +163,6 @@ func processQueryWithMCP(nlq string) (string, error) {
 
 	round := 0
 	logger.Info("[+] -------------------------")
-	dump(fmt.Sprintf("[+] LLM response round %v: ", round), resp)
 
 	for len(resp.Choices) > 0 && *resp.Choices[0].FinishReason == azopenai.CompletionsFinishReasonToolCalls && round < MAX_RESULT {
 		round++
@@ -162,7 +173,6 @@ func processQueryWithMCP(nlq string) (string, error) {
 		})
 		// Then process the tool calls
 		for _, toolCall := range resp.Choices[0].Message.ToolCalls {
-			dump("[+] Tool call: ", toolCall)
 			funcCall := toolCall.(*azopenai.ChatCompletionsFunctionToolCall).Function
 			// Call the tool
 			calledTool := []string{}
@@ -218,8 +228,6 @@ func processQueryWithMCP(nlq string) (string, error) {
 				}
 			}
 		}
-		logger.Info("[+] -------------------------")
-		dump(fmt.Sprintf("[+] messages round %v: ", round), messages)
 		// Ask to the LLM again with the tool call result
 		resp, err = llmConfig.azureClient.GetChatCompletions(context.TODO(), azopenai.ChatCompletionsOptions{
 			DeploymentName: &llmConfig.azureConfig.ModelDeployment,
@@ -234,7 +242,6 @@ func processQueryWithMCP(nlq string) (string, error) {
 		}
 
 		logger.Info("[+] -------------------------")
-		dump(fmt.Sprintf("[+] LLM response round %v: ", round), resp)
 		if len(resp.Choices) > 0 && *resp.Choices[0].FinishReason == azopenai.CompletionsFinishReasonStopped {
 			if resp.Choices[0].Message == nil || resp.Choices[0].Message.Content == nil {
 				logger.Errorf("[+] ERROR: no content in the response")
@@ -273,25 +280,26 @@ func deinitMCPClient() {
 	}
 }
 
-func initMCPClient() {
+func initMCPClient() error {
 	for name, config := range mcpConfig {
 		if config.Client != nil {
 			continue // already initialized
 		}
 		logger.Debugf("[+] initMCPClient(%s) ...", name)
 
-		if config.Env != nil && len(config.Env) > 0 {
-			for index, env := range config.Env {
-				tokens := strings.Split(env, "=")
-				if len(tokens) != 2 {
-					continue
+		// If the env configuration value start with '$' (like
+		// 'GITHUB_PERSONAL_ACCESS_TOKEN=$GITHUB_PERSONAL_ACCESS_TOKEN'), let's
+		// take the value from the environment variable.
+		for index, env := range config.Env {
+			tokens := strings.Split(env, "=")
+			if len(tokens) == 2 && len(tokens[1]) > 0 && tokens[1][0] == '$' {
+				envValue := os.Getenv(tokens[1][1:])
+				if envValue == "" {
+					logger.Errorf("Environment variable %s not found", tokens[1][1:])
+					return fmt.Errorf("MCP configuration error")
 				}
-				if len(tokens[1]) > 0 && tokens[1][0] == '$' && os.Getenv(tokens[1][1:]) != "" {
-					tokens[1] = os.Getenv(tokens[1][1:])
-					config.Env[index] = fmt.Sprintf("%s=%s", tokens[0], tokens[1])
-				}
+				config.Env[index] = fmt.Sprintf("%s=%s", tokens[0], envValue)
 			}
-			logger.Infof("[+] initMCPClient(%s): Using env %v\n", name, config.Env)
 		}
 
 		if config.SSE != "" {
@@ -299,12 +307,14 @@ func initMCPClient() {
 
 			client, err := client.NewSSEMCPClient(config.SSE)
 			if err != nil {
-				logger.Fatalf("Failed to create client: %v", err)
+				logger.Errorf("Failed to create client: %v", err)
+				return fmt.Errorf("MCP configuration error")
 			}
 
 			err = client.Start(context.TODO())
 			if err != nil {
-				logger.Fatalf("Failed to start client")
+				logger.Fatalf("Failed to start client: %v", err)
+				return fmt.Errorf("MCP configuration error")
 			}
 			config.Client = client
 		} else if config.Command != "" {
@@ -312,11 +322,13 @@ func initMCPClient() {
 
 			client, err := client.NewStdioMCPClient(config.Command, config.Env, config.Args...)
 			if err != nil {
-				logger.Fatalf("Failed to create client: %v", err)
+				logger.Errorf("Failed to create client: %v", err)
+				return fmt.Errorf("MCP configuration error")
 			}
 			config.Client = client
 		} else {
-			logger.Fatalf("Either 'sse' or 'command' must be provided for the MCP Server configuration")
+			logger.Errorf("Either 'sse' or 'command' must be provided for the MCP Server configuration")
+			return fmt.Errorf("MCP configuration error")
 		}
 
 		logger.Infof("[+] Initializing client")
@@ -328,7 +340,8 @@ func initMCPClient() {
 		}
 		initResult, err := config.Client.Initialize(context.TODO(), initRequest)
 		if err != nil {
-			logger.Fatalf("Failed to initialize: %v", err)
+			logger.Errorf("Failed to initialize: %v", err)
+			return fmt.Errorf("MCP Initialization error")
 		}
 		logger.Infof(
 			"[+] Initialized with server: %s %s\n\n",
@@ -340,13 +353,16 @@ func initMCPClient() {
 		toolsRequest := mcp.ListToolsRequest{}
 		tools, err := config.Client.ListTools(context.TODO(), toolsRequest)
 		if err != nil {
-			logger.Fatalf("Failed to list tools: %v", err)
+			logger.Errorf("Failed to list tools: %v", err)
+			return fmt.Errorf("MCP initialization error")
 		}
 		config.Tools = tools.Tools
 		for _, tool := range tools.Tools {
 			logger.Infof("   - %s: %s\n", tool.Name, tool.Description)
 		}
 	}
+
+	return nil
 }
 
 func loadMCPPluginConfig(r *http.Request) error {
@@ -373,13 +389,15 @@ func loadMCPPluginConfig(r *http.Request) error {
 
 	configValue, err := json.Marshal(globalPluginConfig.Data.Value)
 	if err != nil {
-		logger.Fatalf("[+] Invalid MCP Configuration: %s", err)
+		logger.Errorf("[+] Invalid MCP Configuration: %s", err)
+		return err
 	}
 
 	mcpTykConfig := TykMCPConfig{}
 	err = json.Unmarshal([]byte(configValue), &mcpTykConfig)
 	if err != nil {
-		logger.Fatalf("[+] conversion error for acpPluginConfig: %s", err)
+		logger.Errorf("[+] conversion error for acpPluginConfig: %s", err)
+		return err
 	}
 	mcpConfig = mcpTykConfig.MCPServers
 
@@ -392,7 +410,7 @@ func loadMCPPluginConfig(r *http.Request) error {
 
 	if llmConfig.azureConfig.OpenAIKey == "" {
 		err := fmt.Errorf("Missing required config for azureConfig.openAIKey")
-		logger.Fatalf("[+] Error initializing plugin: %s", err)
+		logger.Errorf("[+] Error initializing plugin: %s", err)
 		return err
 	}
 
@@ -404,7 +422,7 @@ func loadMCPPluginConfig(r *http.Request) error {
 		llmConfig.azureClient, err = azopenai.NewClientWithKeyCredential(llmConfig.azureConfig.OpenAIEndpoint, keyCredential, nil)
 	}
 	if err != nil {
-		logger.Fatalf("[+] Unable to create OpenAI client: %s", err)
+		logger.Errorf("[+] Unable to create OpenAI client: %s", err)
 		return err
 	}
 
