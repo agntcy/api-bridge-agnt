@@ -141,6 +141,13 @@ func processQueryWithMCP(nlq string) (string, error) {
 		logger.Errorf("[+] ERROR: %s", err)
 		return "", err
 	}
+	// If the LLM answered directly (no tool calls), return that content immediately
+	if len(resp.Choices) > 0 && *resp.Choices[0].FinishReason != azopenai.CompletionsFinishReasonToolCalls {
+		if resp.Choices[0].Message != nil && resp.Choices[0].Message.Content != nil {
+			return *resp.Choices[0].Message.Content, nil
+		}
+		return "", fmt.Errorf("no content in LLM response")
+	}
 
 	round := 0
 	logger.Info("[+] -------------------------")
