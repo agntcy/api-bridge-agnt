@@ -25,7 +25,8 @@ const MAX_RESULT = 3
 type MCPServers map[string]*MCPServerConfig
 
 type TykMCPConfig struct {
-	MCPServers MCPServers `json:"mcpServers"`
+	MCPServers   MCPServers      `json:"mcpServers"`
+	MCPLLMConfig MCPOpenAIConfig `json:"openai,omitempty"`
 }
 
 type MCPServerConfig struct {
@@ -49,7 +50,7 @@ type MCPOpenAIConfig struct {
 
 type MCPLLMConfig struct {
 	openAIConfig MCPOpenAIConfig
-	azureClient *azopenai.Client
+	azureClient  *azopenai.Client
 }
 
 var llmConfig = MCPLLMConfig{}
@@ -232,7 +233,10 @@ func processQueryWithMCP(nlq string) (string, error) {
 		}
 
 		for _, toolCall := range choice.Message.ToolCalls {
-			functionToolCall := toolCall.(*azopenai.ChatCompletionsFunctionToolCall)
+			functionToolCall, ok := toolCall.(*azopenai.ChatCompletionsFunctionToolCall)
+			if !ok {
+				continue
+			}
 			result, err := callMCPTool(*functionToolCall.Function.Name, functionToolCall.Function.Arguments)
 			if err != nil {
 				logger.Errorf("[+] Failed to call tool (%s): %v", *functionToolCall.Function.Name, err)
@@ -290,7 +294,7 @@ func initMCPClient() error {
 		// 'GITHUB_PERSONAL_ACCESS_TOKEN=$GITHUB_PERSONAL_ACCESS_TOKEN'), let's
 		// take the value from the environment variable.
 		for index, env := range config.Env {
-			tokens := strings.Split(env, "=")
+			tokens := strings.SplitN(env, "=", 2)
 			if len(tokens) == 2 && len(tokens[1]) > 0 && tokens[1][0] == '$' {
 				envValue := os.Getenv(tokens[1][1:])
 				if envValue == "" {
@@ -403,14 +407,13 @@ func loadMCPPluginConfig(r *http.Request) error {
 	}
 	mcpConfig = mcpTykConfig.MCPServers
 
-	llmConfigData := map[string]any{}
-	llmConfig.openAIConfig = MCPOpenAIConfig{
-		OpenAIEndpoint:  getConfigValue(DEFAULT_OPENAI_ENDPOINT, llmConfigData, "openAIEndpoint", "OPENAI_ENDPOINT"),
-		OpenAIKey:       getConfigValue("", llmConfigData, "openAIKey", "OPENAI_API_KEY"),
-		ModelDeployment: getConfigValue(DEFAULT_OPENAI_MODEL, llmConfigData, "modelDeployment", "OPENAI_MODEL"),
-	}
+	llmConfig.openAIConfig = mcpTykConfig.MCPLLMConfig
+	llmConfig.openAIConfig.OpenAIEndpoint = getEnvOrDefault(llmConfig.openAIConfig.OpenAIEndpoint, "OPENAI_ENDPOINT", DEFAULT_OPENAI_ENDPOINT)
+	llmConfig.openAIConfig.OpenAIKey = getEnvOrDefault(llmConfig.openAIConfig.OpenAIKey, "OPENAI_API_KEY", "")
+	llmConfig.openAIConfig.ModelDeployment = getEnvOrDefault(llmConfig.openAIConfig.ModelDeployment, "OPENAI_MODEL", DEFAULT_OPENAI_MODEL)
+
 	if llmConfig.openAIConfig.OpenAIKey == "" {
-		err := fmt.Errorf("Missing required config for azureConfig.openAIKey")
+		err := fmt.Errorf("Missing required config for openai.openAIKey")
 		logger.Errorf("[+] Error initializing plugin: %s", err)
 		return err
 	}
