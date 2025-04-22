@@ -67,10 +67,10 @@ func ProcessMCPQuery(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// POST and Content-Type: application/nlq are expected
-	if !(r.URL.Path == "/mcp/" && r.Method == "POST" && r.Header.Get("Content-Type") == CONTENT_TYPE_NLQ) {
+	if r.URL.Path != "/mcp/" || r.Method != http.MethodPost || !isNLQContentType(r.Header.Get("Content-Type")) {
 		logger.Debugf("[+] Query is not POST or Content-Type is not %s, ignoring ...", CONTENT_TYPE_NLQ)
 		rw.WriteHeader(http.StatusBadRequest)
-		_, _ = rw.Write([]byte(fmt.Sprintf("You muse use POST / with Content-Type: %s", CONTENT_TYPE_NLQ)))
+		_, _ = rw.Write([]byte(fmt.Sprintf("You must use POST / with Content-Type: %s", CONTENT_TYPE_NLQ)))
 		return
 	}
 
@@ -88,7 +88,6 @@ func ProcessMCPQuery(rw http.ResponseWriter, r *http.Request) {
 		http.Error(rw, INTERNAL_ERROR_MSG, http.StatusInternalServerError)
 		return
 	}
-	logger.Debugf("[+] Found a response (%v) for query=%v", response, nlq)
 
 	rw.WriteHeader(http.StatusOK)
 	_, _ = rw.Write([]byte(response))
@@ -340,14 +339,13 @@ func initMCPClient() {
 		for _, tool := range tools.Tools {
 			logger.Infof("   - %s: %s\n", tool.Name, tool.Description)
 		}
-		fmt.Println()
 	}
 }
 
 func loadMCPPluginConfig(r *http.Request) error {
 	logger.Debugf("[+] loadMCPPluginConfig ...")
 
-	/*apidef := getOASDefinition(r)
+	apidef := getOASDefinition(r)
 	middleware := apidef.GetTykMiddleware()
 	if middleware == nil {
 		err := fmt.Errorf("Tyk middleware definition is nil")
@@ -369,56 +367,14 @@ func loadMCPPluginConfig(r *http.Request) error {
 	configValue, err := json.Marshal(globalPluginConfig.Data.Value)
 	if err != nil {
 		logger.Fatalf("[+] Invalid MCP Configuration: %s", err)
-	}*/
-	configValue := `{
-		"weather": {
-			"command": "poetry",
-			"args": [
-				"run",
-				"python",
-				"../../../mcp/weather-server-python/weather.py"
-			]
-		},
-		"git": {
-        	"command": "poetry",
-        	"args": [
-				"run",
-				"python",
-				"../../../mcp/servers/git/src/mcp_server_git/server.py", 
-				"--repository", 
-				"/media/sf_vmshared/api-bridge-agnt"
-			]
-      	},
-		"github": {
-			"command": "docker",
-			"args": [
-				"run",
-				"-i",
-				"--rm",
-				"-e",
-				"GITHUB_PERSONAL_ACCESS_TOKEN",
-				"ghcr.io/github/github-mcp-server"
-			],
-			"env": ["GITHUB_PERSONAL_ACCESS_TOKEN=$GITHUB_PERSONAL_ACCESS_TOKEN"]
-		},
-		"resend": {
-			"command": "node",
-			"args": [
-				"/media/sf_vmshared/mcp/mcp-send-email/build/index.js", 
-				"--key=re_GtFPj431_DchhGWm2bw2hcQTmmLL8ZuTX", 
-				"--sender=mcp.integration.test@resend.dev"
-			]
-		}
-	}`
-	err := json.Unmarshal([]byte(configValue), &mcpConfig)
+	}
 
-	/*mcpTykConfig := TykMCPConfig{}
+	mcpTykConfig := TykMCPConfig{}
 	err = json.Unmarshal([]byte(configValue), &mcpTykConfig)
 	if err != nil {
 		logger.Fatalf("[+] conversion error for acpPluginConfig: %s", err)
 	}
-	mcpConfig = mcpTykConfig.MCPServers*/
-	dump("[+] mcpConfig :", mcpConfig)
+	mcpConfig = mcpTykConfig.MCPServers
 
 	llmConfigData := map[string]any{}
 	llmConfig.azureConfig = MCPAzureConfig{
@@ -444,13 +400,6 @@ func loadMCPPluginConfig(r *http.Request) error {
 		logger.Fatalf("[+] Unable to create OpenAI client: %s", err)
 		return err
 	}
-	dump("[+] azureConfig: ", llmConfig.azureConfig)
 
 	return nil
-}
-
-func init() {
-	logger.Infof("[+] Initializing API Bridge Agnt plugin ...")
-	loadMCPPluginConfig(nil)
-	initMCPClient()
 }
