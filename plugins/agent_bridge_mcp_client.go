@@ -10,7 +10,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"slices"
 	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai"
@@ -42,14 +41,14 @@ type MCPServerConfig struct {
 
 var mcpConfig MCPServers = MCPServers{}
 
-type MCPAzureConfig struct {
+type MCPOpenAIConfig struct {
 	OpenAIKey       string `json:"openAIKey"`
 	OpenAIEndpoint  string `json:"openAIEndpoint"`
 	ModelDeployment string `json:"modelDeployment"`
 }
 
 type MCPLLMConfig struct {
-	azureConfig MCPAzureConfig
+	openAIConfig MCPOpenAIConfig
 	azureClient *azopenai.Client
 }
 
@@ -105,6 +104,58 @@ func ProcessMCPQuery(rw http.ResponseWriter, r *http.Request) {
 	_, _ = rw.Write([]byte(response))
 }
 
+func callMCPTool(toolName string, args *string) (string, error) {
+	// The arguments for the function come back as a JSON string
+	funcParams := map[string]any{}
+	if args != nil {
+		err := json.Unmarshal([]byte(*args), &funcParams)
+		if err != nil {
+			logger.Errorf("[+] Failed to unmarshal function parameters: %v", err)
+			return "", err
+		}
+	}
+
+	var mcpServerWithTool *MCPServerConfig = nil
+	for _, mcpServer := range mcpConfig {
+		for _, tool := range mcpServer.Tools {
+			if tool.Name == toolName {
+				mcpServerWithTool = mcpServer
+				break
+			}
+		}
+	}
+
+	if mcpServerWithTool == nil {
+		logger.Errorf("[+] Failed to find MCP server for tool: %s", toolName)
+		return "", fmt.Errorf("Unable to find tool '%s'", toolName)
+	}
+
+	logger.Infof("[+] Calling tool: (%s) from server (%s)", toolName, mcpServerWithTool.Name)
+
+	toolRequest := mcp.CallToolRequest{}
+	toolRequest.Params.Name = toolName
+	toolRequest.Params.Arguments = funcParams
+
+	callResult, err := mcpServerWithTool.Client.CallTool(context.TODO(), toolRequest)
+	if err != nil {
+		logger.Errorf("[+] Failed to call tool: %v", err)
+		return "", err
+	}
+
+	result := ""
+	for _, content := range callResult.Content {
+		if textContent, ok := content.(mcp.TextContent); ok {
+			result = result + textContent.Text
+		} else {
+			jsonBytes, _ := json.MarshalIndent(content, "", "  ")
+			result = result + string(jsonBytes)
+		}
+	}
+
+	logger.Infof("[+] Tool call result: %+v\n", result)
+	return result, nil
+}
+
 func processQueryWithMCP(nlq string) (string, error) {
 	logger.Debugf("[+] processQueryWithMCP('%s') ...", nlq)
 
@@ -113,7 +164,6 @@ func processQueryWithMCP(nlq string) (string, error) {
 	for _, c := range mcpConfig {
 		availableTools = append(availableTools, c.Tools...)
 	}
-	logger.Infof("[+] Nb Available tools: %+v\n", len(availableTools))
 
 	if len(availableTools) == 0 {
 		logger.Errorf("[+] processQueryWithMCP('%s') no available tools", nlq)
@@ -142,95 +192,13 @@ func processQueryWithMCP(nlq string) (string, error) {
 		},
 		)
 	}
-	resp, err := llmConfig.azureClient.GetChatCompletions(context.TODO(), azopenai.ChatCompletionsOptions{
-		DeploymentName: &llmConfig.azureConfig.ModelDeployment,
-		Messages:       messages,
-		Tools:          llmTools,
-		Temperature:    to.Ptr[float32](0.0),
-		Seed:           to.Ptr[int64](42),
-	}, nil)
-	if err != nil {
-		logger.Errorf("[+] ERROR: %s", err)
-		return "", err
-	}
-	// If the LLM answered directly (no tool calls), return that content immediately
-	if len(resp.Choices) > 0 && *resp.Choices[0].FinishReason != azopenai.CompletionsFinishReasonToolCalls {
-		if resp.Choices[0].Message != nil && resp.Choices[0].Message.Content != nil {
-			return *resp.Choices[0].Message.Content, nil
-		}
-		return "", fmt.Errorf("no content in LLM response")
-	}
 
 	round := 0
-	logger.Info("[+] -------------------------")
-
-	for len(resp.Choices) > 0 && *resp.Choices[0].FinishReason == azopenai.CompletionsFinishReasonToolCalls && round < MAX_RESULT {
+	for round < MAX_RESULT {
 		round++
-		// Add the tool call message from the response to the messages. It allow to the LLM to match the response with the tool call
-		// messages = append(messages, resp.Choices[0].Message)
-		messages = append(messages, &azopenai.ChatRequestAssistantMessage{
-			ToolCalls: resp.Choices[0].Message.ToolCalls,
-		})
-		// Then process the tool calls
-		for _, toolCall := range resp.Choices[0].Message.ToolCalls {
-			funcCall := toolCall.(*azopenai.ChatCompletionsFunctionToolCall).Function
-			// Call the tool
-			calledTool := []string{}
-			for name, item := range mcpConfig {
-				for _, tool := range item.Tools {
-					if slices.Contains(calledTool, tool.Name) {
-						continue
-					}
-					if tool.Name == *funcCall.Name {
-						logger.Infof("[+] Calling tool: (%s) from server (%s)", tool.Name, name)
-						// The arguments for the function come back as a JSON string
-						funcParams := map[string]any{}
-						err = json.Unmarshal([]byte(*funcCall.Arguments), &funcParams)
-						if err != nil {
-							logger.Errorf("[+] Failed to unmarshal function parameters: %v", err)
-							continue
-						}
 
-						logger.Println("Doing tool request")
-						listTmpRequest := mcp.CallToolRequest{}
-						listTmpRequest.Params.Name = tool.Name
-						listTmpRequest.Params.Arguments = funcParams
-
-						callResult, err := item.Client.CallTool(context.TODO(), listTmpRequest)
-						if err != nil {
-							logger.Errorf("[+] Failed to call tool (%s): %v", tool.Name, err)
-							messages = append(messages, &azopenai.ChatRequestToolMessage{
-								Content:    azopenai.NewChatRequestToolMessageContent("An error occurred while calling the tool"),
-								ToolCallID: toolCall.(*azopenai.ChatCompletionsFunctionToolCall).ID,
-							})
-							continue
-						}
-
-						result := ""
-
-						for _, content := range callResult.Content {
-							if textContent, ok := content.(mcp.TextContent); ok {
-								result = result + textContent.Text
-							} else {
-								jsonBytes, _ := json.MarshalIndent(content, "", "  ")
-								result = result + string(jsonBytes)
-							}
-						}
-
-						logger.Infof("[+] Tool call result: %+v\n", result)
-						messages = append(messages, &azopenai.ChatRequestToolMessage{
-							Content:    azopenai.NewChatRequestToolMessageContent(result),
-							ToolCallID: toolCall.(*azopenai.ChatCompletionsFunctionToolCall).ID,
-						})
-
-						calledTool = append(calledTool, tool.Name)
-					}
-				}
-			}
-		}
-		// Ask to the LLM again with the tool call result
-		resp, err = llmConfig.azureClient.GetChatCompletions(context.TODO(), azopenai.ChatCompletionsOptions{
-			DeploymentName: &llmConfig.azureConfig.ModelDeployment,
+		resp, err := llmConfig.azureClient.GetChatCompletions(context.TODO(), azopenai.ChatCompletionsOptions{
+			DeploymentName: &llmConfig.openAIConfig.ModelDeployment,
 			Messages:       messages,
 			Tools:          llmTools,
 			Temperature:    to.Ptr[float32](0.0),
@@ -241,19 +209,50 @@ func processQueryWithMCP(nlq string) (string, error) {
 			return "", err
 		}
 
-		logger.Info("[+] -------------------------")
-		if len(resp.Choices) > 0 && *resp.Choices[0].FinishReason == azopenai.CompletionsFinishReasonStopped {
-			if resp.Choices[0].Message == nil || resp.Choices[0].Message.Content == nil {
+		if len(resp.Choices) == 0 {
+			return "", fmt.Errorf("no choices in LLM response")
+		}
+
+		choice := resp.Choices[0]
+		if choice.FinishReason == nil {
+			return "", fmt.Errorf("LLM returned a choice with no finish reason")
+		}
+
+		messages = append(messages, &azopenai.ChatRequestAssistantMessage{
+			ToolCalls: choice.Message.ToolCalls,
+		})
+
+		if *choice.FinishReason == azopenai.CompletionsFinishReasonStopped {
+			if choice.Message == nil || choice.Message.Content == nil {
 				logger.Errorf("[+] ERROR: no content in the response")
 				return "", fmt.Errorf("no content in the response")
 			}
-			logger.Infof("[+] Stop is detected, final response is (%v) in %v round", *resp.Choices[0].Message.Content, round)
-			return *resp.Choices[0].Message.Content, nil
+			logger.Infof("[+] Stop is detected, final response is (%v) in %v round", *choice.Message.Content, round)
+			return *choice.Message.Content, nil
+		}
+
+		for _, toolCall := range choice.Message.ToolCalls {
+			functionToolCall := toolCall.(*azopenai.ChatCompletionsFunctionToolCall)
+			result, err := callMCPTool(*functionToolCall.Function.Name, functionToolCall.Function.Arguments)
+			if err != nil {
+				logger.Errorf("[+] Failed to call tool (%s): %v", *functionToolCall.Function.Name, err)
+				messages = append(messages, &azopenai.ChatRequestToolMessage{
+					Content:    azopenai.NewChatRequestToolMessageContent("An error occurred while calling the tool"),
+					ToolCallID: functionToolCall.ID,
+				})
+				continue
+			}
+
+			messages = append(messages, &azopenai.ChatRequestToolMessage{
+				Content:    azopenai.NewChatRequestToolMessageContent(result),
+				ToolCallID: functionToolCall.ID,
+			})
 		}
 
 	}
 
-	return "", nil
+	// We reached the limit of rounds
+	return "", fmt.Errorf("reached the limit of rounds")
 }
 
 func getChatCompletionFunctionDefinition(tool mcp.Tool) (*azopenai.ChatCompletionsFunctionToolDefinitionFunction, error) {
@@ -399,27 +398,29 @@ func loadMCPPluginConfig(r *http.Request) error {
 		logger.Errorf("[+] conversion error for acpPluginConfig: %s", err)
 		return err
 	}
+	for name := range mcpTykConfig.MCPServers {
+		mcpTykConfig.MCPServers[name].Name = name
+	}
 	mcpConfig = mcpTykConfig.MCPServers
 
 	llmConfigData := map[string]any{}
-	llmConfig.azureConfig = MCPAzureConfig{
+	llmConfig.openAIConfig = MCPOpenAIConfig{
 		OpenAIEndpoint:  getConfigValue(DEFAULT_OPENAI_ENDPOINT, llmConfigData, "openAIEndpoint", "OPENAI_ENDPOINT"),
-		OpenAIKey:       getConfigValue("", llmConfigData, "openAIKey", "AZURE_OPENAI_API_KEY"),
-		ModelDeployment: getConfigValue(DEFAULT_OPENAI_MODEL, llmConfigData, "modelDeployment", "OPENAI_MODEL_DEPLOYMENT_ID"),
+		OpenAIKey:       getConfigValue("", llmConfigData, "openAIKey", "OPENAI_API_KEY"),
+		ModelDeployment: getConfigValue(DEFAULT_OPENAI_MODEL, llmConfigData, "modelDeployment", "OPENAI_MODEL"),
 	}
-
-	if llmConfig.azureConfig.OpenAIKey == "" {
+	if llmConfig.openAIConfig.OpenAIKey == "" {
 		err := fmt.Errorf("Missing required config for azureConfig.openAIKey")
 		logger.Errorf("[+] Error initializing plugin: %s", err)
 		return err
 	}
 
 	// Note: eventually cache these by hash of config?
-	keyCredential := azcore.NewKeyCredential(llmConfig.azureConfig.OpenAIKey)
-	if llmConfig.azureConfig.OpenAIEndpoint == DEFAULT_OPENAI_ENDPOINT {
-		llmConfig.azureClient, err = azopenai.NewClientForOpenAI(llmConfig.azureConfig.OpenAIEndpoint, keyCredential, nil)
+	keyCredential := azcore.NewKeyCredential(llmConfig.openAIConfig.OpenAIKey)
+	if llmConfig.openAIConfig.OpenAIEndpoint == DEFAULT_OPENAI_ENDPOINT {
+		llmConfig.azureClient, err = azopenai.NewClientForOpenAI(llmConfig.openAIConfig.OpenAIEndpoint, keyCredential, nil)
 	} else {
-		llmConfig.azureClient, err = azopenai.NewClientWithKeyCredential(llmConfig.azureConfig.OpenAIEndpoint, keyCredential, nil)
+		llmConfig.azureClient, err = azopenai.NewClientWithKeyCredential(llmConfig.openAIConfig.OpenAIEndpoint, keyCredential, nil)
 	}
 	if err != nil {
 		logger.Errorf("[+] Unable to create OpenAI client: %s", err)

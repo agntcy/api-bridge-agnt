@@ -23,18 +23,6 @@
             "enabled": true,
             "value": {
               "mcpServers": {
-                "weather": {
-                  "command": "poetry",
-                  "args": [
-                    "run",
-                    "python",
-                    "../../../mcp/weather-server-python/weather.py"
-                  ]
-                },
-                "git": {
-                  "command": "python",
-                  "args": ["../servers/git/src/mcp_server_git/server.py", "--repository", "/media/sf_vmshared/api-bridge-agnt"]
-                },
                 "github": {
                   "command": "docker",
                   "args": [
@@ -46,14 +34,6 @@
                     "ghcr.io/github/github-mcp-server"
                   ],
                   "env": ["GITHUB_PERSONAL_ACCESS_TOKEN=$GITHUB_PERSONAL_ACCESS_TOKEN"]
-                },
-                "resend": {
-                  "command": "node",
-                  "args": [
-                    "/media/sf_vmshared/mcp/mcp-send-email/build/index.js", 
-                    "--key=re_GtFPj431_DchhGWm2bw2hcQTmmLL8ZuTX", 
-                    "--sender=mcp.integration.test@resend.dev"
-                  ]
                 }
               }
             }
