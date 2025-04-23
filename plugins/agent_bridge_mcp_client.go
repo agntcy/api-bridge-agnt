@@ -424,7 +424,7 @@ func loadMCPPluginConfig(r *http.Request) error {
 	llmConfig.openAIConfig.ModelDeployment = getEnvOrDefault(llmConfig.openAIConfig.ModelDeployment, "OPENAI_MODEL", DEFAULT_OPENAI_MODEL)
 
 	if llmConfig.openAIConfig.OpenAIKey == "" {
-		err := fmt.Errorf("Missing required config for openai.openAIKey")
+		err := fmt.Errorf("Missing required OpenAI Key. Either set OPENAI_API_KEY environement variable or set the 'openai.openAIKey' configuration")
 		logger.Errorf("[+] Error initializing plugin: %s", err)
 		return err
 	}

@@ -150,8 +150,8 @@ github.com/josharian/intern v1.0.0 h1:vlS4z54oSdjm0bgjRigI+G1HpF+tI+9rE5LLzOg8Hm
 github.com/josharian/intern v1.0.0/go.mod h1:5DoeVV0s6jJacbCEi61lwdGj/aVlrQvzHFFd8Hwg//Y=
 github.com/kelindar/iostream v1.4.0 h1:ELKlinnM/K3GbRp9pYhWuZOyBxMMlYAfsOP+gauvZaY=
 github.com/kelindar/iostream v1.4.0/go.mod h1:MkjMuVb6zGdPQVdwLnFRO0xOTOdDvBWTztFmjRDQkXk=
-github.com/kelindar/search v0.3.0 h1:NY6JkbC8Wy3vujwIR/p9NW3xaVDZxFrE+JQECiFzwW0=
-github.com/kelindar/search v0.3.0/go.mod h1:7goLXnzQ6b0vMJr9SKWmABblTrJgPG3rVwp3yz2Lo5Q=
+github.com/kelindar/search v0.4.0 h1:mj3U26qB6BQJr9/6Q1vHS/I40CQ6Mhb5iJfmfI2e/mY=
+github.com/kelindar/search v0.4.0/go.mod h1:7goLXnzQ6b0vMJr9SKWmABblTrJgPG3rVwp3yz2Lo5Q=
 github.com/kelseyhightower/envconfig v1.4.0 h1:Im6hONhd3pLkfDFsbRgu68RDNkGF1r3dvMUtDTo2cv8=
 github.com/kelseyhightower/envconfig v1.4.0/go.mod h1:cccZRl6mQpaq41TPp5QxidR+Sa3axMbJDNb//FQX6Gg=
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
