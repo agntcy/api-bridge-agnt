@@ -1,0 +1,14 @@
+diff --git a/llama-go.cpp/llama-go.cpp b/llama-go.cpp/llama-go.cpp
+index 79c5ab3..c4e90d1 100644
+--- a/llama-go.cpp/llama-go.cpp
++++ b/llama-go.cpp/llama-go.cpp
+@@ -100,7 +100,8 @@ extern "C" {
+         struct llama_context_params params = llama_context_default_params();
+         params.n_ctx = ctx_size;
+         params.embeddings = embeddings; // Corrected field name
+-
++        printf("[+] Set context param n_ubatch to 2048\n");
++        params.n_ubatch = 2048;
+         return llama_init_from_model(model, params); // Updated function
+     }
+ 
