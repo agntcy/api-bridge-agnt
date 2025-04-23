@@ -92,6 +92,16 @@ func getConfigValue(defaultValue string, configData map[string]any, configMapKey
 	return ret
 }
 
+func getEnvOrDefault(value string, envKey string, defaultValue string) string {
+	if value == "" {
+		value = os.Getenv(envKey)
+		if value == "" {
+			value = defaultValue
+		}
+	}
+	return value
+}
+
 func parseConfigData(apiId string, configData map[string]any) (*PluginDataConfig, error) {
 	logger.Debugf("[+] Parsing config for api id: %s", apiId)
 

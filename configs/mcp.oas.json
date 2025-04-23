@@ -1,0 +1,109 @@
+{
+  "x-tyk-api-gateway": {
+    "info": {
+      "id": "tyk-mcp-id",
+      "name": "MCP services",
+      "state": {
+        "active": true
+      }
+    },
+    "upstream": {
+      "url": "http://"
+    },
+    "server": {
+      "listenPath": {
+        "value": "/mcp/",
+        "strip": true
+      }
+    },
+    "middleware": {
+      "global": {
+        "pluginConfig": {
+          "data": {
+            "enabled": true,
+            "value": {
+              "mcpServers": {
+                "github": {
+                  "command": "docker",
+                  "args": [
+                    "run",
+                    "-i",
+                    "--rm",
+                    "-e",
+                    "GITHUB_PERSONAL_ACCESS_TOKEN",
+                    "ghcr.io/github/github-mcp-server"
+                  ],
+                  "env": ["GITHUB_PERSONAL_ACCESS_TOKEN=${GITHUB_PERSONAL_ACCESS_TOKEN}"]
+                }
+              }
+            }
+          },
+          "driver": "goplugin"
+        },
+        "postPlugins": [
+          {
+            "enabled": true,
+            "functionName": "ProcessMCPQuery",
+            "path": "middleware/agent-bridge-plugin.so"
+          }
+        ]
+      }
+    }
+  },
+  "openapi": "3.0.1",
+  "info": {
+    "title": "MCP",
+    "description": "Call configured MCP server tools",
+    "version": "0.0.1"
+  },
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
+  "paths": {
+    "/init": {
+      "post": {
+        "summary": "Initialize MCP servers",
+        "requestBody": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "MCP initialization state.",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/": {
+      "post": {
+        "summary": "Call an MCP server from a natural language query",
+        "requestBody": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "NLQ Response.",
+            "content": {}
+          }
+        }
+      }
+    }
+  },
+  "components": {}
+}
