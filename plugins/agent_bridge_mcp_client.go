@@ -20,7 +20,11 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
-const MAX_RESULT = 3
+const (
+	DEFAULT_MAX_LLM_ITERATIONS = 3
+	DEFAULT_LLM_SEED           = 42
+	DEFAULT_LLM_TEMPERATURE    = 0.0
+)
 
 type MCPServers map[string]*MCPServerConfig
 
@@ -79,10 +83,12 @@ func ProcessMCPQuery(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	// POST and Content-Type: application/nlq are expected
-	if r.URL.Path != "/mcp/" || r.Method != http.MethodPost || !isNLQContentType(r.Header.Get("Content-Type")) {
-		logger.Debugf("[+] Query is not POST or Content-Type is not %s, ignoring ...", CONTENT_TYPE_NLQ)
+	if r.URL.Path != "/mcp/" || r.Method != http.MethodPost {
+		rw.WriteHeader(http.StatusNotFound)
+		return
+	} else if !isNLQContentType(r.Header.Get("Content-Type")) {
 		rw.WriteHeader(http.StatusBadRequest)
-		_, _ = rw.Write([]byte(fmt.Sprintf("You must use POST / with Content-Type: %s", CONTENT_TYPE_NLQ)))
+		_, _ = rw.Write([]byte(fmt.Sprintf("You must use POST /mcp/ with Content-Type: %s", CONTENT_TYPE_NLQ)))
 		return
 	}
 
@@ -106,7 +112,7 @@ func ProcessMCPQuery(rw http.ResponseWriter, r *http.Request) {
 }
 
 func callMCPTool(toolName string, args *string) (string, error) {
-	// The arguments for the function come back as a JSON string
+	// The arguments for the function is provided as a JSON string
 	funcParams := map[string]any{}
 	if args != nil {
 		err := json.Unmarshal([]byte(*args), &funcParams)
@@ -148,12 +154,16 @@ func callMCPTool(toolName string, args *string) (string, error) {
 		if textContent, ok := content.(mcp.TextContent); ok {
 			result = result + textContent.Text
 		} else {
-			jsonBytes, _ := json.MarshalIndent(content, "", "  ")
+			jsonBytes, err := json.MarshalIndent(content, "", "  ")
+			if err != nil {
+				logger.Warn("[+] MCP result is not of format TextContent, nor JSON serializable, ignoring ...")
+				continue
+			}
 			result = result + string(jsonBytes)
 		}
 	}
 
-	logger.Infof("[+] Tool call result: %+v\n", result)
+	logger.Debugf("[+] Tool call result: %+v\n", result)
 	return result, nil
 }
 
@@ -171,8 +181,8 @@ func processQueryWithMCP(nlq string) (string, error) {
 		return "", fmt.Errorf("no available tools")
 	}
 	if llmConfig.azureClient == nil {
-		logger.Errorf("[+] processQueryWithMCP('%s') azureClient is nil", nlq)
-		return "", fmt.Errorf("azureClient is nil")
+		logger.Error("[+] No LLM configured in MCP configuration")
+		return "", fmt.Errorf("no LLM configured in MCP configuration")
 	}
 
 	// Ask to the LLM
@@ -195,18 +205,18 @@ func processQueryWithMCP(nlq string) (string, error) {
 	}
 
 	round := 0
-	for round < MAX_RESULT {
+	for round < DEFAULT_MAX_LLM_ITERATIONS {
 		round++
 
 		resp, err := llmConfig.azureClient.GetChatCompletions(context.TODO(), azopenai.ChatCompletionsOptions{
 			DeploymentName: &llmConfig.openAIConfig.ModelDeployment,
 			Messages:       messages,
 			Tools:          llmTools,
-			Temperature:    to.Ptr[float32](0.0),
-			Seed:           to.Ptr[int64](42),
+			Temperature:    to.Ptr[float32](DEFAULT_LLM_TEMPERATURE),
+			Seed:           to.Ptr[int64](DEFAULT_LLM_SEED),
 		}, nil)
 		if err != nil {
-			logger.Errorf("[+] ERROR: %s", err)
+			logger.Errorf("[+] Failed to query LLM: %s", err)
 			return "", err
 		}
 
@@ -228,13 +238,13 @@ func processQueryWithMCP(nlq string) (string, error) {
 				logger.Errorf("[+] ERROR: no content in the response")
 				return "", fmt.Errorf("no content in the response")
 			}
-			logger.Infof("[+] Stop is detected, final response is (%v) in %v round", *choice.Message.Content, round)
+			logger.Debugf("[+] Stop is detected, final response is (%v) in %v round", *choice.Message.Content, round)
 			return *choice.Message.Content, nil
 		}
-
 		for _, toolCall := range choice.Message.ToolCalls {
 			functionToolCall, ok := toolCall.(*azopenai.ChatCompletionsFunctionToolCall)
 			if !ok {
+				logger.Errorf("[+] Unexpected error, something is wrong in the azure-sdk-for-go library, ignoring ...")
 				continue
 			}
 			result, err := callMCPTool(*functionToolCall.Function.Name, functionToolCall.Function.Arguments)
@@ -290,15 +300,16 @@ func initMCPClient() error {
 		}
 		logger.Debugf("[+] initMCPClient(%s) ...", name)
 
-		// If the env configuration value start with '$' (like
-		// 'GITHUB_PERSONAL_ACCESS_TOKEN=$GITHUB_PERSONAL_ACCESS_TOKEN'), let's
+		// If the env configuration value contains ${VAR} (like
+		// 'GITHUB_PERSONAL_ACCESS_TOKEN=${GITHUB_PERSONAL_ACCESS_TOKEN}'), let's
 		// take the value from the environment variable.
 		for index, env := range config.Env {
 			tokens := strings.SplitN(env, "=", 2)
-			if len(tokens) == 2 && len(tokens[1]) > 0 && tokens[1][0] == '$' {
-				envValue := os.Getenv(tokens[1][1:])
+			if len(tokens) == 2 && len(tokens[1]) > 0 && strings.HasPrefix(tokens[1], "${") && strings.HasSuffix(tokens[1], "}") {
+				varName := tokens[1][2 : len(tokens[1])-1]
+				envValue := os.Getenv(varName)
 				if envValue == "" {
-					logger.Errorf("Environment variable %s not found", tokens[1][1:])
+					logger.Errorf("[+] Environment variable %s not found", varName)
 					return fmt.Errorf("MCP configuration error")
 				}
 				config.Env[index] = fmt.Sprintf("%s=%s", tokens[0], envValue)
@@ -310,13 +321,13 @@ func initMCPClient() error {
 
 			client, err := client.NewSSEMCPClient(config.SSE)
 			if err != nil {
-				logger.Errorf("Failed to create client: %v", err)
+				logger.Errorf("[+] Failed to create client: %v", err)
 				return fmt.Errorf("MCP configuration error")
 			}
 
 			err = client.Start(context.TODO())
 			if err != nil {
-				logger.Fatalf("Failed to start client: %v", err)
+				logger.Fatalf("[+] Failed to start client: %v", err)
 				return fmt.Errorf("MCP configuration error")
 			}
 			config.Client = client
@@ -325,12 +336,12 @@ func initMCPClient() error {
 
 			client, err := client.NewStdioMCPClient(config.Command, config.Env, config.Args...)
 			if err != nil {
-				logger.Errorf("Failed to create client: %v", err)
+				logger.Errorf("[+] Failed to create client: %v", err)
 				return fmt.Errorf("MCP configuration error")
 			}
 			config.Client = client
 		} else {
-			logger.Errorf("Either 'sse' or 'command' must be provided for the MCP Server configuration")
+			logger.Errorf("[+] Either 'sse' or 'command' must be provided for the MCP Server configuration")
 			return fmt.Errorf("MCP configuration error")
 		}
 
@@ -343,7 +354,7 @@ func initMCPClient() error {
 		}
 		initResult, err := config.Client.Initialize(context.TODO(), initRequest)
 		if err != nil {
-			logger.Errorf("Failed to initialize: %v", err)
+			logger.Errorf("[+] Failed to initialize: %v", err)
 			return fmt.Errorf("MCP Initialization error")
 		}
 		logger.Infof(
@@ -356,12 +367,12 @@ func initMCPClient() error {
 		toolsRequest := mcp.ListToolsRequest{}
 		tools, err := config.Client.ListTools(context.TODO(), toolsRequest)
 		if err != nil {
-			logger.Errorf("Failed to list tools: %v", err)
+			logger.Errorf("[+] Failed to list tools: %v", err)
 			return fmt.Errorf("MCP initialization error")
 		}
 		config.Tools = tools.Tools
 		for _, tool := range tools.Tools {
-			logger.Infof("   - %s: %s\n", tool.Name, tool.Description)
+			logger.Infof("[+]   - %s: %s\n", tool.Name, tool.Description)
 		}
 	}
 
@@ -375,13 +386,13 @@ func loadMCPPluginConfig(r *http.Request) error {
 	middleware := apidef.GetTykMiddleware()
 	if middleware == nil {
 		err := fmt.Errorf("Tyk middleware definition is nil")
-		logger.Errorf("[+] initPluginFromRequest: %s", err)
+		logger.Errorf("[+] Error while loading MCP configuration: %s", err)
 		return err
 	}
 	globalPluginConfig := middleware.Global.PluginConfig
 	if globalPluginConfig == nil {
 		err := fmt.Errorf("Tyk global.pluginConfig definition is nil")
-		logger.Errorf("[+] initPluginFromRequest: %s", err)
+		logger.Errorf("[+] Error while loading MCP configuration: %s", err)
 		return err
 	}
 	if globalPluginConfig.Data == nil {
@@ -392,14 +403,14 @@ func loadMCPPluginConfig(r *http.Request) error {
 
 	configValue, err := json.Marshal(globalPluginConfig.Data.Value)
 	if err != nil {
-		logger.Errorf("[+] Invalid MCP Configuration: %s", err)
+		logger.Errorf("[+] Error while loading MCP configuration: %s", err)
 		return err
 	}
 
 	mcpTykConfig := TykMCPConfig{}
 	err = json.Unmarshal([]byte(configValue), &mcpTykConfig)
 	if err != nil {
-		logger.Errorf("[+] conversion error for acpPluginConfig: %s", err)
+		logger.Errorf("[+] Error while loading MCP configuration: %s", err)
 		return err
 	}
 	for name := range mcpTykConfig.MCPServers {
