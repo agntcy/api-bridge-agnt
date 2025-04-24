@@ -65,12 +65,10 @@ func ProcessACPQuery(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if acpPluginData.MaxRequestLength > 0 {
-		if r.ContentLength > acpPluginData.MaxRequestLength {
-			logger.Debugf("[+] Query is too large, ignoring ...")
-			http.Error(rw, "Query is too large", http.StatusRequestEntityTooLarge)
-			return
-		}
+	if acpPluginData.MaxRequestLength > 0 && r.ContentLength > acpPluginData.MaxRequestLength {
+		logger.Debugf("[+] Query is too large, ignoring ...")
+		http.Error(rw, "Query is too large", http.StatusRequestEntityTooLarge)
+		return
 	}
 
 	nlqBytes, err := io.ReadAll(r.Body)
