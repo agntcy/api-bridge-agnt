@@ -87,6 +87,14 @@ func SelectAndRewrite(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if apiConfig.MaxRequestLength > 0 {
+		if r.ContentLength > apiConfig.MaxRequestLength {
+			logger.Debugf("[+] Query is too large, ignoring ...")
+			http.Error(rw, "Query is too large", http.StatusRequestEntityTooLarge)
+			return
+		}
+	}
+
 	nlqBytes, err := io.ReadAll(r.Body)
 	if err != nil {
 		logger.Errorf("[+] Error while reading the body: %s", err)

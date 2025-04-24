@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"sync"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai"
@@ -24,8 +25,9 @@ const (
 	DEFAULT_OPENAI_ENDPOINT        = "https://api.openai.com/v1"
 	DEFAULT_OPENAI_MODEL           = "gpt-4o-mini"
 
-	MAX_UTERANCE_LENGTH   = 1500
-	VECTORIZER_GPU_LAYERS = 1
+	MAX_UTERANCE_LENGTH      = 1500
+	VECTORIZER_GPU_LAYERS    = 1
+	DEFAULT_MAX_REQUEST_SIZE = -1 // in characters; -1 means no limit
 )
 
 type AzureConfig struct {
@@ -63,6 +65,8 @@ type PluginDataConfig struct {
 
 	APIID      string
 	ListenPath string
+
+	MaxRequestLength int64 `json:"maxRequestLength"` // MaxRequestSize is the maximum size of the request in characters; default is -1 (no limit)
 }
 
 func getApiId(r *http.Request) (string, error) {
@@ -102,6 +106,17 @@ func getEnvOrDefault(value string, envKey string, defaultValue string) string {
 	return value
 }
 
+func getEnvAsInt(envKey string, defaultValue int) int {
+	valueStr := os.Getenv(envKey)
+	if valueStr != "" {
+		if value, err := strconv.Atoi(valueStr); err == nil {
+			return value
+		}
+	}
+
+	return defaultValue
+}
+
 func parseConfigData(apiId string, configData map[string]any) (*PluginDataConfig, error) {
 	logger.Debugf("[+] Parsing config for api id: %s", apiId)
 
@@ -130,7 +145,8 @@ func parseConfigData(apiId string, configData map[string]any) (*PluginDataConfig
 		SelectModelsPath:     DEFAULT_MODEL_EMBEDDINGS_PATH,
 		RelevanceThreshold:   threshold,
 
-		APIID: apiId,
+		APIID:            apiId,
+		MaxRequestLength: int64(getEnvAsInt("MAX_REQUEST_SIZE", DEFAULT_MAX_REQUEST_SIZE)),
 	}
 
 	logger.Debugf("[+] Finished parsing config for api id: %s", apiId)
