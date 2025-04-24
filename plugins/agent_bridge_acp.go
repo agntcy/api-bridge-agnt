@@ -33,6 +33,7 @@ type ACPPluginData struct {
 	ModelEmbedder     *search.Vectorizer
 	ModelIndex        *search.Index[string]
 	StoreVersion      int64
+	MaxRequestLength  int64 `json:"maxRequestLength"` // MaxRequestSize is the maximum size of the request in characters; default is -1 (no limit)
 }
 
 var acpPluginData = ACPPluginData{
@@ -61,6 +62,12 @@ func ProcessACPQuery(rw http.ResponseWriter, r *http.Request) {
 	// Only proceed for POST with Content-Type: application/nlq (parameters are allowed)
 	if r.Method != http.MethodPost || !isNLQContentType(r.Header.Get("Content-Type")) {
 		logger.Debugf("[+] Query is not POST or Content-Type is not %s, ignoring ...", CONTENT_TYPE_NLQ)
+		return
+	}
+
+	if acpPluginData.MaxRequestLength > 0 && r.ContentLength > acpPluginData.MaxRequestLength {
+		logger.Debugf("[+] Query is too large, ignoring ...")
+		http.Error(rw, "Query is too large", http.StatusRequestEntityTooLarge)
 		return
 	}
 
@@ -104,9 +111,13 @@ func ProcessACPQuery(rw http.ResponseWriter, r *http.Request) {
 func initACPPluginApiConfig() error {
 	// Clear existing map
 	acpPluginData.ACPPluginServices = make(map[string]ACPPluginApiConfig)
+
 	// save the current version of the store BEFORE retreiving the data
 	acpPluginData.StoreVersion = storeVersion
 	logger.Debugf("[+] Loading ACP plugin config version (%v) ...", acpPluginData.StoreVersion)
+
+	acpPluginData.MaxRequestLength = int64(getEnvAsInt("MAX_REQUEST_SIZE", DEFAULT_MAX_REQUEST_SIZE))
+
 	// Get All APIs keys and values from Redis
 	apiKeysValues := agentBridgeStore.GetKeysAndValuesWithFilter("*")
 	if apiKeysValues == nil {

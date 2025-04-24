@@ -70,6 +70,7 @@ search-release-$(SEARCH_VERSION)/README.md: download_models_for_semrouter
 	cd "search-release-$(SEARCH_VERSION)" && git lfs install --local
 	cd "search-release-$(SEARCH_VERSION)" && git submodule update --init --recursive
 	cd "search-release-$(SEARCH_VERSION)" && git lfs pull
+	cd "search-release-$(SEARCH_VERSION)" && git apply --ignore-space-change --ignore-whitespace --reject --quiet --whitespace=fix ../patches/0001-fix-ubatch-in-search-release-$(SEARCH_VERSION).patch  || true
 
 build_search_lib search-release-$(SEARCH_VERSION)/build/lib/$(SEARCH_LIB): search-release-$(SEARCH_VERSION)/README.md
 	-mkdir -p "search-release-$(SEARCH_VERSION)/build"
