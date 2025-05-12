@@ -35,6 +35,7 @@ func TestConfigParseConfigData(t *testing.T) {
 				SelectModelsPath:     "models",
 				APIID:                "httpbin",
 				RelevanceThreshold:   DEFAULT_RELEVANCE_THRESHOLD,
+				MaxRequestLength:     DEFAULT_MAX_REQUEST_SIZE,
 			},
 		},
 		{
@@ -51,6 +52,7 @@ func TestConfigParseConfigData(t *testing.T) {
 				SelectModelsPath:     "models",
 				APIID:                "httpbin",
 				RelevanceThreshold:   DEFAULT_RELEVANCE_THRESHOLD,
+				MaxRequestLength:     DEFAULT_MAX_REQUEST_SIZE,
 			},
 		},
 	}
