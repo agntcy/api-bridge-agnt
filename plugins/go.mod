@@ -10,7 +10,7 @@ require (
 	github.com/TykTechnologies/tyk v1.9.2-0.20250327144305-4c6253b5ceca
 	github.com/getkin/kin-openapi v0.121.0
 	github.com/kelindar/search v0.4.0
-	github.com/mark3labs/mcp-go v0.22.0
+	github.com/mark3labs/mcp-go v0.27.0
 	github.com/stretchr/testify v1.10.0
 )
 
