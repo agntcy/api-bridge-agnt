@@ -49,11 +49,15 @@ test: search-release-$(SEARCH_VERSION)/build/lib/$(SEARCH_LIB)
 	$(LIB_ENV_VAR)=$(PROJECT_ROOT)/search-release-$(SEARCH_VERSION)/build/lib go test -v ./plugins
 
 clean:
-	rm -f go/src/$(PLUGIN_NAME).so
-	rm -f go/src/$(PLUGIN_NAME)_*.so
+	rm -f plugins/$(PLUGIN_NAME).so
+	rm -f plugins/$(PLUGIN_NAME)_*.so
+	rm -rf search-release-$(SEARCH_VERSION)
+	rm -rf tyk-release-$(TYK_VERSION)
+
 
 setup tyk-release-$(TYK_VERSION)/go.mod:
-	git clone --branch $(TYK_VERSION) --depth 1 https://github.com/TykTechnologies/tyk.git tyk-release-$(TYK_VERSION) || true
+	rm -rf tyk-release-$(TYK_VERSION)
+	git clone --branch $(TYK_VERSION) --depth 1 https://github.com/TykTechnologies/tyk.git tyk-release-$(TYK_VERSION)
 	cd tyk-release-$(TYK_VERSION) && sed -i.bak 's/.*Version = ".*"/       Version = "$(TYK_VERSION)-dev"/g' internal/build/version.go
 
 	# set the go version of the plugin to the one used by tyk
@@ -64,9 +68,10 @@ setup tyk-release-$(TYK_VERSION)/go.mod:
 	/bin/sh -c 'commit_hash=`cd tyk-release-$(TYK_VERSION) && git rev-parse HEAD` && cd plugins && go get github.com/TykTechnologies/tyk@$${commit_hash}'
 	cd plugins && go mod tidy -go=$$(go mod edit -json ../tyk-release-$(TYK_VERSION)/go.mod | jq -r .Go)
 
-search-release-$(SEARCH_VERSION)/README.md: download_models_for_semrouter
+search-release-$(SEARCH_VERSION)/README.md:
+	rm -rf search-release-$(SEARCH_VERSION)
 	@git lfs status || { echo "Error: you must install git-lfs from https://git-lfs.com/ and then enable it: git lfs install [--local]" ; false ; }
-	git clone --branch $(SEARCH_VERSION) --depth 1 https://github.com/kelindar/search.git search-release-$(SEARCH_VERSION) || true
+	git clone --branch $(SEARCH_VERSION) --depth 1 https://github.com/kelindar/search.git search-release-$(SEARCH_VERSION)
 	cd "search-release-$(SEARCH_VERSION)" && git lfs install --local
 	cd "search-release-$(SEARCH_VERSION)" && git submodule update --init --recursive
 	cd "search-release-$(SEARCH_VERSION)" && git lfs pull
@@ -85,7 +90,7 @@ tyk-release-$(TYK_VERSION)/$(SEARCH_LIB): search-release-$(SEARCH_VERSION)/build
 build_tyk tyk-release-$(TYK_VERSION)/tyk: tyk-release-$(TYK_VERSION)/go.mod
 	cd tyk-release-$(TYK_VERSION) && GOOS=$(TARGET_OS) GOARCH=$(TARGET_ARCH) go build -tags=goplugin -trimpath .
 
-start_tyk: tyk-release-$(TYK_VERSION)/tyk tyk-release-$(TYK_VERSION)/middleware/agent-bridge-plugin.so tyk-release-$(TYK_VERSION)/$(SEARCH_LIB)
+start_tyk: tyk-release-$(TYK_VERSION)/tyk tyk-release-$(TYK_VERSION)/middleware/agent-bridge-plugin.so download_models_for_semrouter tyk-release-$(TYK_VERSION)/$(SEARCH_LIB)
 	if [ -f .env ]; then export $$(grep -v '^[:space:]*#' .env | xargs); fi ; \
 	  cd tyk-release-$(TYK_VERSION) && TYK_LOGLEVEL=debug ./tyk start --conf=../configs/tyk.conf
 
