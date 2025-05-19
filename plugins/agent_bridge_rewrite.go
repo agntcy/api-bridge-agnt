@@ -144,12 +144,12 @@ func rewriteQueryForRoute(r *http.Request, route *routers.Route, pathParams map[
 
 	// Add new path parameters
 	for k, v := range newParams.InPathParams {
-		r.URL.Path = strings.Replace(r.URL.Path, "{"+k+"}", v, -1)
+		r.URL.Path = strings.ReplaceAll(r.URL.Path, "{"+k+"}", v)
 	}
 
 	// Add the original path parameters if they are not in the new path parameters
 	for k, v := range pathParams {
-		r.URL.Path = strings.Replace(r.URL.Path, "{"+k+"}", v, -1)
+		r.URL.Path = strings.ReplaceAll(r.URL.Path, "{"+k+"}", v)
 	}
 
 	// Override the body
