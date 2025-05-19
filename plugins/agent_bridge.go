@@ -16,7 +16,7 @@ import (
 	"github.com/TykTechnologies/tyk/log"
 	"github.com/TykTechnologies/tyk/user"
 
-	"github.com/getkin/kin-openapi/routers"
+	"github.com/TykTechnologies/kin-openapi/routers"
 )
 
 const (
