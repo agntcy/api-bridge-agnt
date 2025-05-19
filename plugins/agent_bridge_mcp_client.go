@@ -88,7 +88,7 @@ func ProcessMCPQuery(rw http.ResponseWriter, r *http.Request) {
 		return
 	} else if !isNLQContentType(r.Header.Get("Content-Type")) {
 		rw.WriteHeader(http.StatusBadRequest)
-		_, _ = rw.Write([]byte(fmt.Sprintf("You must use POST /mcp/ with Content-Type: %s", CONTENT_TYPE_NLQ)))
+		_, _ = fmt.Fprintf(rw, "You must use POST /mcp/ with Content-Type: %s", CONTENT_TYPE_NLQ)
 		return
 	}
 
@@ -134,7 +134,7 @@ func callMCPTool(toolName string, args *string) (string, error) {
 
 	if mcpServerWithTool == nil {
 		logger.Errorf("[+] Failed to find MCP server for tool: %s", toolName)
-		return "", fmt.Errorf("Unable to find tool '%s'", toolName)
+		return "", fmt.Errorf("unable to find tool '%s'", toolName)
 	}
 
 	logger.Infof("[+] Calling tool: (%s) from server (%s)", toolName, mcpServerWithTool.Name)
@@ -424,7 +424,7 @@ func loadMCPPluginConfig(r *http.Request) error {
 	llmConfig.openAIConfig.ModelDeployment = getEnvOrDefault(llmConfig.openAIConfig.ModelDeployment, "OPENAI_MODEL", DEFAULT_OPENAI_MODEL)
 
 	if llmConfig.openAIConfig.OpenAIKey == "" {
-		err := fmt.Errorf("Missing required OpenAI Key. Either set OPENAI_API_KEY environement variable or set the 'openai.openAIKey' configuration")
+		err := fmt.Errorf("missing required OpenAI Key. Either set OPENAI_API_KEY environement variable or set the 'openai.openAIKey' configuration")
 		logger.Errorf("[+] Error initializing plugin: %s", err)
 		return err
 	}
