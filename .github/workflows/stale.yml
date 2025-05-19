@@ -2,9 +2,9 @@
 name: 📆 Mark stale issues
 
 on:
-  schedule:
-    # Run weekly on Saturdays
-    - cron: "30 1 * * 6"
+  # schedule:
+  #   # Run weekly on Saturdays
+  #   - cron: "30 1 * * 6"
   # Run the workflow manually
   workflow_dispatch:
 
