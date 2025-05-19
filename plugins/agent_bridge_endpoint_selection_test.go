@@ -49,7 +49,7 @@ func loadApiSpecsForTests(apiId string, specFilename string) (*PluginDataConfig,
 		},
 		SelectOperations:     map[string]*AIExtensionConfig{},
 		SelectModelEmbedding: DEFAULT_MODEL_EMBEDDINGS_MODEL,
-		SelectModelsPath:     "../tyk-release-v5.8.0/models",
+		SelectModelsPath:     "../tyk-release-v5.8.1/models",
 
 		APIID: apiId,
 	}
