@@ -22,8 +22,6 @@ import (
 
 const (
 	DEFAULT_MAX_LLM_ITERATIONS = 3
-	DEFAULT_LLM_SEED           = 42
-	DEFAULT_LLM_TEMPERATURE    = 0.0
 )
 
 type MCPServers map[string]*MCPServerConfig
