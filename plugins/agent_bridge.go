@@ -5,7 +5,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"mime"
@@ -237,49 +236,6 @@ func RewriteResponseToNl(rw http.ResponseWriter, res *http.Response, req *http.R
 
 	res.Body = io.NopCloser(strings.NewReader(naturalLanguageResponse))
 	res.ContentLength = int64(len(naturalLanguageResponse))
-}
-
-func QueryEndpointSelection(rw http.ResponseWriter, r *http.Request) {
-	logger.Debugf("[+] Entering QueryEndpointSelection ...")
-
-	apiConfig, err := getPluginFromRequest(r)
-	if err != nil {
-		logger.Debugf("[+] Failed to init plugin from request: %s", err)
-		http.Error(rw, INTERNAL_ERROR_MSG, http.StatusInternalServerError)
-		return
-	}
-
-	queries := r.URL.Query()
-	selectionQueries, present := queries["query"]
-	if !present {
-		logger.Debugf("[+] Failed to find \"query\" query parameter")
-		http.Error(rw, INTERNAL_ERROR_MSG, http.StatusInternalServerError)
-		return
-	}
-
-	var replyData QueryEndpointSelectionReply
-
-	if len(selectionQueries) > 0 {
-		matches := selectEndpoint(apiConfig.APIID, selectionQueries)
-		replyData = QueryEndpointSelectionReply{
-			Results: matches,
-		}
-	} else {
-		replyData = QueryEndpointSelectionReply{
-			Results: []QueryEndpointSelectionMatch{},
-		}
-	}
-
-	jsonData, err := json.Marshal(replyData)
-	if err != nil {
-		logger.Debugf("[+] Failed to marshal JSON reply data: %s", err)
-		http.Error(rw, INTERNAL_ERROR_MSG, http.StatusInternalServerError)
-		return
-	}
-
-	rw.Header().Set("Content-Type", "application/json")
-	rw.WriteHeader(http.StatusOK)
-	_, _ = rw.Write(jsonData)
 }
 
 func init() {
