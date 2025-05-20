@@ -7,9 +7,10 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"mime"
 	"net/http"
 	"strings"
+
+	"github.com/gorilla/mux"
 
 	"github.com/TykTechnologies/tyk/ctx"
 	"github.com/TykTechnologies/tyk/log"
@@ -44,24 +45,44 @@ const (
 
 var logger = log.Get()
 
-// isNLQContentType parses a Content-Type header and returns true if it denotes application/nlq
-func isNLQContentType(contentType string) bool {
-	mediaType, _, err := mime.ParseMediaType(contentType)
-	if err != nil {
-		return false
+func APIBridgeAgent(rw http.ResponseWriter, r *http.Request) {
+	logger.Debugf("[+] Entering main entry point APIBridgeAgent")
+	// POST /api-bridge-agent/listen_path_ap1 -H 'HEADER_X_NL_CONFIG: Anything'
+
+	router := mux.NewRouter()
+
+	router.HandleFunc("/api-bridge-agent/mcp/init", mcpInit).Methods(http.MethodPost)
+	router.HandleFunc("/api-bridge-agent/mcp", processMCP).Methods(http.MethodPost).Headers("Content-Type", CONTENT_TYPE_NLQ)
+	router.HandleFunc("/api-bridge-agent/aba", processACP).Methods(http.MethodPost).Headers("Content-Type", CONTENT_TYPE_NLQ)
+
+	// Catchall to real APIs
+	router.PathPrefix("/").HandlerFunc(processPluginConfig).Methods(http.MethodDelete, http.MethodPut).Headers("HEADER_X_NL_CONFIG", "")
+	router.PathPrefix("/").HandlerFunc(selectAndRewrite).Methods(http.MethodPost).Headers("Content-Type", CONTENT_TYPE_NLQ)
+
+	var match mux.RouteMatch
+	var handler http.Handler
+	if router.Match(r, &match) {
+		handler = match.Handler
 	}
-	return strings.EqualFold(mediaType, CONTENT_TYPE_NLQ)
+
+	if handler == nil {
+		return
+	}
+
+	handler.ServeHTTP(rw, r)
 }
 
-func SelectAndRewrite(rw http.ResponseWriter, r *http.Request) {
-	logger.Debugf("[+] Inside SelectAndRewrite ...")
+func APIBridgeAgentResponse(rw http.ResponseWriter, res *http.Response, req *http.Request) {
+	RewriteResponseToNl(rw, res, req)
+}
+
+func processPluginConfig(rw http.ResponseWriter, r *http.Request) {
 	apiConfig, err := getPluginFromRequest(r)
 	if err != nil {
 		logger.Debugf("[+] Failed to init plugin from request: %s", err)
 		http.Error(rw, INTERNAL_ERROR_MSG, http.StatusInternalServerError)
 		return
 	}
-
 	// Check if request is for configuration
 	_, exists := r.Header[HEADER_X_NL_CONFIG]
 	if exists {
@@ -82,10 +103,14 @@ func SelectAndRewrite(rw http.ResponseWriter, r *http.Request) {
 		rw.WriteHeader(http.StatusOK)
 		return
 	}
+}
 
-	// Only proceed for POST with Content-Type: application/nlq (parameters are allowed)
-	if r.Method != http.MethodPost || !isNLQContentType(r.Header.Get("Content-Type")) {
-		logger.Debugf("[+] Query is not POST or Content-Type is not %s, ignoring ...", CONTENT_TYPE_NLQ)
+func selectAndRewrite(rw http.ResponseWriter, r *http.Request) {
+	logger.Debugf("[+] Inside selectAndRewrite ...")
+	apiConfig, err := getPluginFromRequest(r)
+	if err != nil {
+		logger.Debugf("[+] Failed to init plugin from request: %s", err)
+		http.Error(rw, INTERNAL_ERROR_MSG, http.StatusInternalServerError)
 		return
 	}
 
@@ -127,7 +152,7 @@ func SelectAndRewrite(rw http.ResponseWriter, r *http.Request) {
 	apidef := getOASDefinition(r)
 	if apidef == nil {
 		err := fmt.Errorf("API definition is nil")
-		logger.Errorf("[+] SelectAndRewrite: %s", err)
+		logger.Errorf("[+] selectAndRewrite: %s", err)
 		return
 	}
 

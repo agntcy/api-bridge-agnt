@@ -28,20 +28,14 @@
         "postPlugins": [
           {
             "enabled": true,
-            "functionName": "SelectAndRewrite",
+            "functionName": "APIBridgeAgent",
             "path": "middleware/agent-bridge-plugin.so"
-          },
-          {
-            "enabled": true,
-            "functionName": "RewriteQueryToOas",
-            "path": "middleware/agent-bridge-plugin.so",
-            "require_session": true
           }
         ],
         "responsePlugins": [
           {
             "enabled": true,
-            "functionName": "RewriteResponseToNl",
+            "functionName": "APIBridgeAgentResponse",
             "path": "middleware/agent-bridge-plugin.so"
           }
         ]
