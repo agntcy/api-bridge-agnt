@@ -1,0 +1,73 @@
+{
+  "x-tyk-api-gateway": {
+    "info": {
+      "id": "api-bridge-agent-id",
+      "name": "API Bridge Agent",
+      "state": {
+        "active": true
+      }
+    },
+    "upstream": {
+      "url": ""
+    },
+    "server": {
+      "listenPath": {
+        "value": "/aba/",
+        "strip": true
+      }
+    },
+    "middleware": {
+      "global": {
+        "pluginConfig": {
+          "data": {
+            "enabled": true,
+            "value": {}
+          },
+          "driver": "goplugin"
+        },
+        "prePlugins": [
+          {
+            "enabled": true,
+            "functionName": "ProcessACPQuery",
+            "path": "middleware/agent-bridge-plugin.so"
+          }
+        ]
+      }
+    }
+  },
+  "openapi": "3.0.1",
+  "info": {
+    "title": "API Bridge Agent",
+    "description": "API Bridge Agent services",
+    "version": "0.0.1"
+  },
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
+  "paths": {
+    "/": {
+      "post": {
+        "summary": "Ask a natural language query question",
+        "requestBody": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "NLQ Response.",
+            "content": {}
+          }
+        }
+      }
+    }
+  },
+  "components": {}
+}
