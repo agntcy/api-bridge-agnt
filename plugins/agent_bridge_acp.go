@@ -90,7 +90,7 @@ func ProcessACPQuery(rw http.ResponseWriter, r *http.Request) {
 	service, err := findACPServiceFromQuery(nlq)
 	if err != nil {
 		logger.Errorf("[+] Failed to find a service for query: %s", nlq)
-		http.Error(rw, INTERNAL_ERROR_MSG, http.StatusInternalServerError)
+		http.Error(rw, NO_SERVICE_FOUND, http.StatusNotFound)
 		return
 	}
 	logger.Debugf("[+] Found a service (%v) for query=%v", service, nlq)
