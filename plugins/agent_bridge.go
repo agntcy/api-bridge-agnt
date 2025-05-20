@@ -28,6 +28,7 @@ const (
 	RESPONSE_TYPE_UPSTREAM = "upstream" // Keep the response as it is
 
 	INTERNAL_ERROR_MSG = "I'm sorry, but I wasn't able to process your request, it's an internal error"
+	NO_SERVICE_FOUND = "No service available to answer the request"
 )
 
 const (
