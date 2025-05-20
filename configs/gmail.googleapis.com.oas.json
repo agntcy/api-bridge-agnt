@@ -36,11 +36,6 @@
             "enabled": true,
             "functionName": "RewriteQueryToOas",
             "path": "middleware/agent-bridge-plugin.so"
-          },
-          {
-              "enabled": true,
-              "functionName": "QueryEndpointSelection",
-              "path": "middleware/agent-bridge-plugin.so"
           }
         ],
         "responsePlugins": [
