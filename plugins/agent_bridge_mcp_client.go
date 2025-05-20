@@ -57,39 +57,29 @@ type MCPLLMConfig struct {
 
 var llmConfig = MCPLLMConfig{}
 
-func ProcessMCPQuery(rw http.ResponseWriter, r *http.Request) {
+func mcpInit(rw http.ResponseWriter, r *http.Request) {
+	deinitMCPClient()
+	mcpConfig = MCPServers{}
+	err := loadMCPPluginConfig(r)
+	if err != nil {
+		logger.Errorf("[+] Failed to load MCP plugin config: %s", err)
+		http.Error(rw, "Error while loading MCP configuration", http.StatusInternalServerError)
+		return
+	}
+	err = initMCPClient()
+	if err != nil {
+		logger.Errorf("[+] Failed to initialize MCP servers: %s", err)
+		http.Error(rw, "Error while loading MCP sub-system", http.StatusInternalServerError)
+		return
+	}
+	rw.WriteHeader(http.StatusOK)
+	_, _ = rw.Write([]byte("MCP Server(s) Initialized"))
+}
+
+func processMCP(rw http.ResponseWriter, r *http.Request) {
 	logger.Debugf("[+] Inside ProcessMCPQuery ...")
 
-	if r.URL.Path == "/mcp/init" || len(mcpConfig) == 0 {
-		deinitMCPClient()
-		mcpConfig = MCPServers{}
-		err := loadMCPPluginConfig(r)
-		if err != nil {
-			logger.Errorf("[+] Failed to load MCP plugin config: %s", err)
-			http.Error(rw, "Error while loading MCP configuration", http.StatusInternalServerError)
-			return
-		}
-		err = initMCPClient()
-		if err != nil {
-			logger.Errorf("[+] Failed to initialize MCP servers: %s", err)
-			http.Error(rw, "Error while loading MCP sub-system", http.StatusInternalServerError)
-			return
-		}
-		rw.WriteHeader(http.StatusOK)
-		_, _ = rw.Write([]byte("MCP Server(s) Initialized"))
-		return
-	}
-
 	// POST and Content-Type: application/nlq are expected
-	if r.URL.Path != "/mcp/" || r.Method != http.MethodPost {
-		rw.WriteHeader(http.StatusNotFound)
-		return
-	} else if !isNLQContentType(r.Header.Get("Content-Type")) {
-		rw.WriteHeader(http.StatusBadRequest)
-		_, _ = fmt.Fprintf(rw, "You must use POST /mcp/ with Content-Type: %s", CONTENT_TYPE_NLQ)
-		return
-	}
-
 	nlqBytes, err := io.ReadAll(r.Body)
 	if err != nil {
 		logger.Errorf("[+] Error while reading the body: %s", err)

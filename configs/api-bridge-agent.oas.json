@@ -12,8 +12,8 @@
     },
     "server": {
       "listenPath": {
-        "value": "/aba/",
-        "strip": true
+        "value": "/api-bridge-agent/",
+        "strip": false
       }
     },
     "middleware": {
@@ -21,14 +21,21 @@
         "pluginConfig": {
           "data": {
             "enabled": true,
-            "value": {}
+            "value": {
+              "mcpServers": {
+                "ddg": {
+                  "command": "uvx",
+                  "args": ["duckduckgo-mcp-server"]
+                }
+              }
+            }
           },
           "driver": "goplugin"
         },
         "prePlugins": [
           {
             "enabled": true,
-            "functionName": "ProcessACPQuery",
+            "functionName": "APIBridgeAgent",
             "path": "middleware/agent-bridge-plugin.so"
           }
         ]
@@ -47,9 +54,51 @@
     }
   ],
   "paths": {
-    "/": {
+    "/aba": {
       "post": {
         "summary": "Ask a natural language query question",
+        "requestBody": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "NLQ Response.",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/mcp/init": {
+      "post": {
+        "summary": "Initialize MCP servers",
+        "requestBody": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "MCP initialization state.",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/mcp": {
+      "post": {
+        "summary": "Call an MCP server from a natural language query",
         "requestBody": {
           "content": {
             "text/plain": {

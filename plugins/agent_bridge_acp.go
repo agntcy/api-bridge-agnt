@@ -46,7 +46,7 @@ func SetContext(r *http.Request, ctx context.Context) {
 	*r = *r2
 }
 
-func ProcessACPQuery(rw http.ResponseWriter, r *http.Request) {
+func processACP(rw http.ResponseWriter, r *http.Request) {
 	logger.Debug("[+] Inside ProcessACPQuery -->")
 
 	if len(acpPluginData.ACPPluginServices) == 0 || acpPluginData.StoreVersion != storeVersion {
@@ -57,12 +57,6 @@ func ProcessACPQuery(rw http.ResponseWriter, r *http.Request) {
 			http.Error(rw, INTERNAL_ERROR_MSG, http.StatusInternalServerError)
 			return
 		}
-	}
-
-	// Only proceed for POST with Content-Type: application/nlq (parameters are allowed)
-	if r.Method != http.MethodPost || !isNLQContentType(r.Header.Get("Content-Type")) {
-		logger.Debugf("[+] Query is not POST or Content-Type is not %s, ignoring ...", CONTENT_TYPE_NLQ)
-		return
 	}
 
 	if acpPluginData.MaxRequestLength > 0 && r.ContentLength > acpPluginData.MaxRequestLength {
@@ -189,5 +183,4 @@ func init() {
 	if agentBridgeStore == nil {
 		agentBridgeStore = getStorageForPlugin(context.TODO())
 	}
-
 }
