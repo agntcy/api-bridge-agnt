@@ -56,7 +56,7 @@ func saveApiUterances(apiID string, pluginDataConfig *PluginDataConfig) error {
 	for _, aiExtention := range pluginDataConfig.SelectOperations {
 		utterances = append(utterances, aiExtention.InputExamples...)
 	}
-	apiConfig := ACPPluginApiConfig{
+	apiConfig := apiServicePluginApiConfig{
 		APIName:    pluginDataConfig.APIID,
 		Target:     fmt.Sprintf("tyk://%s%s", apiID, pluginDataConfig.ListenPath),
 		Utterances: utterances,

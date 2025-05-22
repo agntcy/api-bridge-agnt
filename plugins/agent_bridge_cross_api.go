@@ -21,14 +21,14 @@ const (
 	DEFAULT_THRESHOLD = 0.5
 )
 
-type ACPPluginApiConfig struct {
+type apiServicePluginApiConfig struct {
 	APIName    string   `json:"name"`
 	Target     string   `json:"url"`
 	Utterances []string `json:"utterances"`
 }
 
-type ACPPluginData struct {
-	ACPPluginServices map[string]ACPPluginApiConfig
+type apiServicePluginData struct {
+	PluginServices map[string]apiServicePluginApiConfig
 	ModelPath         string
 	ModelEmbedder     *search.Vectorizer
 	ModelIndex        *search.Index[string]
@@ -36,8 +36,8 @@ type ACPPluginData struct {
 	MaxRequestLength  int64 `json:"maxRequestLength"` // MaxRequestSize is the maximum size of the request in characters; default is -1 (no limit)
 }
 
-var acpPluginData = ACPPluginData{
-	ACPPluginServices: map[string]ACPPluginApiConfig{},
+var servicePluginData = apiServicePluginData{
+	PluginServices: map[string]apiServicePluginApiConfig{},
 }
 
 // SetContext updates the context of a request.
@@ -46,20 +46,20 @@ func SetContext(r *http.Request, ctx context.Context) {
 	*r = *r2
 }
 
-func processACP(rw http.ResponseWriter, r *http.Request) {
-	logger.Debug("[+] Inside ProcessACPQuery -->")
+func processSelectAPI(rw http.ResponseWriter, r *http.Request) {
+	logger.Debug("[+] Inside processSelectAPI -->")
 
-	if len(acpPluginData.ACPPluginServices) == 0 || acpPluginData.StoreVersion != storeVersion {
-		logger.Infof("[+] ACP plugin config is empty or store version has changed, reloading ...")
-		err := initACPPluginApiConfig()
+	if len(servicePluginData.PluginServices) == 0 || servicePluginData.StoreVersion != storeVersion {
+		logger.Infof("[+] config is empty or store version has changed, reloading ...")
+		err := initServicePluginApiConfig()
 		if err != nil {
-			logger.Errorf("[+] Error while getting the ACP plugin config: %s", err)
+			logger.Errorf("[+] Error while getting the plugin config: %s", err)
 			http.Error(rw, INTERNAL_ERROR_MSG, http.StatusInternalServerError)
 			return
 		}
 	}
 
-	if acpPluginData.MaxRequestLength > 0 && r.ContentLength > acpPluginData.MaxRequestLength {
+	if servicePluginData.MaxRequestLength > 0 && r.ContentLength > servicePluginData.MaxRequestLength {
 		logger.Debugf("[+] Query is too large, ignoring ...")
 		http.Error(rw, "Query is too large", http.StatusRequestEntityTooLarge)
 		return
@@ -81,7 +81,7 @@ func processACP(rw http.ResponseWriter, r *http.Request) {
 	}
 	ctx.SetSession(r, session, true)
 
-	service, err := findACPServiceFromQuery(nlq)
+	service, err := findServiceFromQuery(nlq)
 	if err != nil {
 		logger.Errorf("[+] Failed to find a service for query: %s", nlq)
 		http.Error(rw, NO_SERVICE_FOUND, http.StatusNotFound)
@@ -102,15 +102,15 @@ func processACP(rw http.ResponseWriter, r *http.Request) {
 	SetContext(r, rctx)
 }
 
-func initACPPluginApiConfig() error {
+func initServicePluginApiConfig() error {
 	// Clear existing map
-	acpPluginData.ACPPluginServices = make(map[string]ACPPluginApiConfig)
+	servicePluginData.PluginServices = make(map[string]apiServicePluginApiConfig)
 
 	// save the current version of the store BEFORE retreiving the data
-	acpPluginData.StoreVersion = storeVersion
-	logger.Debugf("[+] Loading ACP plugin config version (%v) ...", acpPluginData.StoreVersion)
+	servicePluginData.StoreVersion = storeVersion
+	logger.Debugf("[+] Loading plugin config version (%v) ...", servicePluginData.StoreVersion)
 
-	acpPluginData.MaxRequestLength = int64(getEnvAsInt("MAX_REQUEST_SIZE", DEFAULT_MAX_REQUEST_SIZE))
+	servicePluginData.MaxRequestLength = int64(getEnvAsInt("MAX_REQUEST_SIZE", DEFAULT_MAX_REQUEST_SIZE))
 
 	// Get All APIs keys and values from Redis
 	apiKeysValues := agentBridgeStore.GetKeysAndValuesWithFilter("*")
@@ -121,47 +121,47 @@ func initACPPluginApiConfig() error {
 	// Refresh config
 	for key, value := range apiKeysValues {
 		logger.Debugf("[+] Found key: '%s', with value: '%s'", key, value)
-		apiConfig := ACPPluginApiConfig{}
+		apiConfig := apiServicePluginApiConfig{}
 		err := json.Unmarshal([]byte(value), &apiConfig)
 		if err != nil {
-			logger.Fatalf("[+] conversion error for acpPluginConfig: %s", err)
+			logger.Fatalf("[+] conversion error for apiServicePluginApiConfig: %s", err)
 		}
-		acpPluginData.ACPPluginServices[apiConfig.APIName] = apiConfig
+		servicePluginData.PluginServices[apiConfig.APIName] = apiConfig
 	}
 
 	return nil
 }
 
-func findACPServiceFromQuery(query string) (string, error) {
+func findServiceFromQuery(query string) (string, error) {
 	logger.Debugf("[+] Process query=%v <--", query)
 
-	if acpPluginData.ModelEmbedder == nil {
+	if servicePluginData.ModelEmbedder == nil {
 		var err error
-		acpPluginData.ModelPath = filepath.Join(DEFAULT_MODEL_EMBEDDINGS_PATH, DEFAULT_MODEL_EMBEDDINGS_MODEL)
-		acpPluginData.ModelEmbedder, err = search.NewVectorizer(acpPluginData.ModelPath, 1)
+		servicePluginData.ModelPath = filepath.Join(DEFAULT_MODEL_EMBEDDINGS_PATH, DEFAULT_MODEL_EMBEDDINGS_MODEL)
+		servicePluginData.ModelEmbedder, err = search.NewVectorizer(servicePluginData.ModelPath, 1)
 		if err != nil {
-			return "", fmt.Errorf("[+] Unable to find embedding model %s: %s", acpPluginData.ModelPath, err)
+			return "", fmt.Errorf("[+] Unable to find embedding model %s: %s", servicePluginData.ModelPath, err)
 		}
-		acpPluginData.ModelIndex = search.NewIndex[string]()
-		for _, service := range acpPluginData.ACPPluginServices {
+		servicePluginData.ModelIndex = search.NewIndex[string]()
+		for _, service := range servicePluginData.PluginServices {
 			for _, utterance := range service.Utterances {
-				embedding, err := acpPluginData.ModelEmbedder.EmbedText(utterance)
+				embedding, err := servicePluginData.ModelEmbedder.EmbedText(utterance)
 				if err != nil {
-					return "", fmt.Errorf("[+] embedding model %s failed for text \"%s\": %s", acpPluginData.ModelPath, utterance, err)
+					return "", fmt.Errorf("[+] embedding model %s failed for text \"%s\": %s", servicePluginData.ModelPath, utterance, err)
 				}
-				acpPluginData.ModelIndex.Add(embedding, service.Target)
+				servicePluginData.ModelIndex.Add(embedding, service.Target)
 			}
 		}
 	}
-	if acpPluginData.ModelEmbedder == nil || acpPluginData.ModelIndex == nil {
+	if servicePluginData.ModelEmbedder == nil || servicePluginData.ModelIndex == nil {
 		return "", fmt.Errorf("[+] ModelEmbedder or ModelIndex is nil")
 	}
 
-	embedding, err := acpPluginData.ModelEmbedder.EmbedText(query)
+	embedding, err := servicePluginData.ModelEmbedder.EmbedText(query)
 	if err != nil {
-		return "", fmt.Errorf("[+] embedding model %s failed for query \"%s\": %s", acpPluginData.ModelPath, query, err)
+		return "", fmt.Errorf("[+] embedding model %s failed for query \"%s\": %s", servicePluginData.ModelPath, query, err)
 	}
-	results := acpPluginData.ModelIndex.Search(embedding, NBRESULT)
+	results := servicePluginData.ModelIndex.Search(embedding, NBRESULT)
 	if len(results) == 0 {
 		return "", fmt.Errorf("[+] No service found for query \"%s\": %s", query, err)
 	} else if NBRESULT > 1 {
@@ -177,7 +177,7 @@ func findACPServiceFromQuery(query string) (string, error) {
 }
 
 func init() {
-	logger.Infof("[+] Initializing API Bridge Agnt plugin (ACP)...")
+	logger.Infof("[+] Initializing API Bridge Agent plugin ...")
 
 	// Init Redis store, if needed
 	if agentBridgeStore == nil {

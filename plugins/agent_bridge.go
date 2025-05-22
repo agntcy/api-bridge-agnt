@@ -53,7 +53,7 @@ func APIBridgeAgent(rw http.ResponseWriter, r *http.Request) {
 
 	router.HandleFunc("/api-bridge-agent/mcp/init", mcpInit).Methods(http.MethodPost)
 	router.HandleFunc("/api-bridge-agent/mcp", processMCP).Methods(http.MethodPost).Headers("Content-Type", CONTENT_TYPE_NLQ)
-	router.HandleFunc("/api-bridge-agent/aba", processACP).Methods(http.MethodPost).Headers("Content-Type", CONTENT_TYPE_NLQ)
+	router.HandleFunc("/api-bridge-agent/aba", processSelectAPI).Methods(http.MethodPost).Headers("Content-Type", CONTENT_TYPE_NLQ)
 
 	// Catchall to real APIs
 	router.PathPrefix("/").HandlerFunc(processPluginConfig).Methods(http.MethodDelete, http.MethodPut).Headers("HEADER_X_NL_CONFIG", "")
