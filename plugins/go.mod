@@ -9,6 +9,7 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.18.0
 	github.com/TykTechnologies/kin-openapi v0.91.0
 	github.com/TykTechnologies/tyk v1.9.2-0.20250509162946-e65eff00608a
+	github.com/gorilla/mux v1.8.1
 	github.com/kelindar/search v0.4.0
 	github.com/mark3labs/mcp-go v0.28.0
 	github.com/stretchr/testify v1.10.0
@@ -44,7 +45,6 @@ require (
 	github.com/goccy/go-json v0.10.4 // indirect
 	github.com/gofrs/uuid v4.4.0+incompatible // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.19.1 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect

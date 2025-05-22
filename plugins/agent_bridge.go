@@ -5,11 +5,13 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
-	"mime"
 	"net/http"
 	"strings"
+
+	"github.com/gorilla/mux"
 
 	"github.com/TykTechnologies/tyk/ctx"
 	"github.com/TykTechnologies/tyk/log"
@@ -28,10 +30,13 @@ const (
 	RESPONSE_TYPE_UPSTREAM = "upstream" // Keep the response as it is
 
 	INTERNAL_ERROR_MSG = "I'm sorry, but I wasn't able to process your request, it's an internal error"
+	NO_SERVICE_FOUND   = "No service available to answer the request"
 )
 
 const (
 	DEFAULT_RELEVANCE_THRESHOLD = 0.5
+	DEFAULT_LLM_SEED            = 42
+	DEFAULT_LLM_TEMPERATURE     = 0.0
 )
 
 const (
@@ -41,24 +46,45 @@ const (
 
 var logger = log.Get()
 
-// isNLQContentType parses a Content-Type header and returns true if it denotes application/nlq
-func isNLQContentType(contentType string) bool {
-	mediaType, _, err := mime.ParseMediaType(contentType)
-	if err != nil {
-		return false
+func APIBridgeAgent(rw http.ResponseWriter, r *http.Request) {
+	logger.Debugf("[+] Entering main entry point APIBridgeAgent")
+
+	router := mux.NewRouter()
+
+	router.HandleFunc("/api-bridge-agent/mcp/init", mcpInit).Methods(http.MethodPost)
+	router.HandleFunc("/api-bridge-agent/mcp", processSelectMCPOnly).Methods(http.MethodPost).Headers("Content-Type", CONTENT_TYPE_NLQ)
+	router.HandleFunc("/api-bridge-agent/openapis", processSelectAPIOnly).Methods(http.MethodPost).Headers("Content-Type", CONTENT_TYPE_NLQ)
+	router.HandleFunc("/api-bridge-agent/nlq", processSelectAPIOrMCP).Methods(http.MethodPost).Headers("Content-Type", CONTENT_TYPE_NLQ)
+	router.HandleFunc("/api-bridge-agent/info", processInfo).Methods(http.MethodGet)
+
+	// Catchall to real APIs
+	router.PathPrefix("/").HandlerFunc(processPluginConfig).Methods(http.MethodDelete, http.MethodPut).Headers(HEADER_X_NL_CONFIG, "")
+	router.PathPrefix("/").HandlerFunc(selectAndRewrite).Methods(http.MethodPost).Headers("Content-Type", CONTENT_TYPE_NLQ)
+
+	var match mux.RouteMatch
+	var handler http.Handler
+	if router.Match(r, &match) {
+		handler = match.Handler
 	}
-	return strings.EqualFold(mediaType, CONTENT_TYPE_NLQ)
+
+	if handler == nil {
+		return
+	}
+
+	handler.ServeHTTP(rw, r)
 }
 
-func SelectAndRewrite(rw http.ResponseWriter, r *http.Request) {
-	logger.Debugf("[+] Inside SelectAndRewrite ...")
+func APIBridgeAgentResponse(rw http.ResponseWriter, res *http.Response, req *http.Request) {
+	RewriteResponseToNl(rw, res, req)
+}
+
+func processPluginConfig(rw http.ResponseWriter, r *http.Request) {
 	apiConfig, err := getPluginFromRequest(r)
 	if err != nil {
 		logger.Debugf("[+] Failed to init plugin from request: %s", err)
 		http.Error(rw, INTERNAL_ERROR_MSG, http.StatusInternalServerError)
 		return
 	}
-
 	// Check if request is for configuration
 	_, exists := r.Header[HEADER_X_NL_CONFIG]
 	if exists {
@@ -79,10 +105,14 @@ func SelectAndRewrite(rw http.ResponseWriter, r *http.Request) {
 		rw.WriteHeader(http.StatusOK)
 		return
 	}
+}
 
-	// Only proceed for POST with Content-Type: application/nlq (parameters are allowed)
-	if r.Method != http.MethodPost || !isNLQContentType(r.Header.Get("Content-Type")) {
-		logger.Debugf("[+] Query is not POST or Content-Type is not %s, ignoring ...", CONTENT_TYPE_NLQ)
+func selectAndRewrite(rw http.ResponseWriter, r *http.Request) {
+	logger.Debugf("[+] Inside selectAndRewrite ...")
+	apiConfig, err := getPluginFromRequest(r)
+	if err != nil {
+		logger.Debugf("[+] Failed to init plugin from request: %s", err)
+		http.Error(rw, INTERNAL_ERROR_MSG, http.StatusInternalServerError)
 		return
 	}
 
@@ -119,12 +149,12 @@ func SelectAndRewrite(rw http.ResponseWriter, r *http.Request) {
 		http.Error(rw, "No matching operation found", http.StatusNotFound)
 		return
 	}
-	logger.Debugf("[+] Selected endpoint: %#v - %#v", *matchingOperation, matchingScore)
+	logger.Debugf("[+] Selected endpoint: %s - %f", *matchingOperation, matchingScore)
 
 	apidef := getOASDefinition(r)
 	if apidef == nil {
 		err := fmt.Errorf("API definition is nil")
-		logger.Errorf("[+] SelectAndRewrite: %s", err)
+		logger.Errorf("[+] selectAndRewrite: %s", err)
 		return
 	}
 
@@ -189,6 +219,40 @@ func RewriteQueryToOas(rw http.ResponseWriter, r *http.Request) {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
+
+func processInfo(rw http.ResponseWriter, r *http.Request) {
+	type Info struct {
+		Version         string   `json:"version"`
+		MCPServers      []string `json:"mcp_servers"`
+		OpenAPIServices []string `json:"openapi_services"`
+	}
+
+	info := Info{
+		Version:         "1.0.0",
+		MCPServers:      []string{},
+		OpenAPIServices: []string{},
+	}
+
+	for mcpServerName := range mcpConfig {
+		name := mcpServerName
+		info.MCPServers = append(info.MCPServers, name)
+	}
+
+	for service := range servicePluginData.PluginServices {
+		serviceName := service
+		info.OpenAPIServices = append(info.OpenAPIServices, serviceName)
+	}
+
+	response, err := json.Marshal(info)
+	if err != nil {
+		logger.Errorf("[+] Error retrieving info about API Bridge Agent: %s", err)
+		http.Error(rw, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	rw.WriteHeader(http.StatusOK)
+	_, _ = rw.Write(response)
 }
 
 func RewriteResponseToNl(rw http.ResponseWriter, res *http.Response, req *http.Request) {
