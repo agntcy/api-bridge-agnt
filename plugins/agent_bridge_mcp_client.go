@@ -79,7 +79,6 @@ func mcpInit(rw http.ResponseWriter, r *http.Request) {
 func processSelectMCPOnly(rw http.ResponseWriter, r *http.Request) {
 	logger.Debugf("[+] Inside ProcessMCPQuery ...")
 
-	// POST and Content-Type: application/nlq are expected
 	nlqBytes, err := io.ReadAll(r.Body)
 	if err != nil {
 		logger.Errorf("[+] Error while reading the body: %s", err)
