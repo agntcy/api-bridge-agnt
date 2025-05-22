@@ -54,9 +54,30 @@
     }
   ],
   "paths": {
-    "/aba": {
+    "/nlq": {
       "post": {
-        "summary": "Ask a natural language query question",
+        "summary": "Ask a natural language query question. Will use OpenAPI services or MCP servers",
+        "requestBody": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "NLQ Response.",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/openapis": {
+      "post": {
+        "summary": "Ask a natural language query question, only use configured OpenAPI services",
         "requestBody": {
           "content": {
             "text/plain": {
