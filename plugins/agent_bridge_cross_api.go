@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	DEFAULT_THRESHOLD = 0.5
+	DEFAULT_THRESHOLD = 0.75
 )
 
 type apiServicePluginApiConfig struct {
@@ -28,12 +28,12 @@ type apiServicePluginApiConfig struct {
 }
 
 type apiServicePluginData struct {
-	PluginServices map[string]apiServicePluginApiConfig
-	ModelPath         string
-	ModelEmbedder     *search.Vectorizer
-	ModelIndex        *search.Index[string]
-	StoreVersion      int64
-	MaxRequestLength  int64 `json:"maxRequestLength"` // MaxRequestSize is the maximum size of the request in characters; default is -1 (no limit)
+	PluginServices   map[string]apiServicePluginApiConfig
+	ModelPath        string
+	ModelEmbedder    *search.Vectorizer
+	ModelIndex       *search.Index[string]
+	StoreVersion     int64
+	MaxRequestLength int64 `json:"maxRequestLength"` // MaxRequestSize is the maximum size of the request in characters; default is -1 (no limit)
 }
 
 var servicePluginData = apiServicePluginData{
@@ -46,8 +46,16 @@ func SetContext(r *http.Request, ctx context.Context) {
 	*r = *r2
 }
 
-func processSelectAPI(rw http.ResponseWriter, r *http.Request) {
-	logger.Debug("[+] Inside processSelectAPI -->")
+func processSelectAPIOrMCP(rw http.ResponseWriter, r *http.Request) {
+	processSelectService(rw, r, true)
+}
+
+func processSelectAPIOnly(rw http.ResponseWriter, r *http.Request) {
+	processSelectService(rw, r, false)
+}
+
+func processSelectService(rw http.ResponseWriter, r *http.Request, mcpFallback bool) {
+	logger.Debug("[+] Inside processSelectService")
 
 	if len(servicePluginData.PluginServices) == 0 || servicePluginData.StoreVersion != storeVersion {
 		logger.Infof("[+] config is empty or store version has changed, reloading ...")
@@ -73,33 +81,58 @@ func processSelectAPI(rw http.ResponseWriter, r *http.Request) {
 	}
 	nlq := string(nlqBytes)
 
-	session := &user.SessionState{
-		MetaData: map[string]any{
-			METADATA_NLQ:           string(nlq),
-			METADATA_RESPONSE_TYPE: RESPONSE_TYPE_NL,
-		},
-	}
-	ctx.SetSession(r, session, true)
-
 	service, err := findServiceFromQuery(nlq)
 	if err != nil {
-		logger.Errorf("[+] Failed to find a service for query: %s", nlq)
-		http.Error(rw, NO_SERVICE_FOUND, http.StatusNotFound)
-		return
-	}
-	logger.Debugf("[+] Found a service (%v) for query=%v", service, nlq)
-
-	u, err := url.Parse(service)
-	if err != nil {
-		logger.Errorf("[+] Error while parsing the service URL (%v): %s", service, err)
+		logger.Errorf("[+] Error while trying to find a matching service: %s", err)
 		http.Error(rw, INTERNAL_ERROR_MSG, http.StatusInternalServerError)
 		return
 	}
-	logger.Debugf("[+] redirect query to: %v ", u)
 
-	rctx := r.Context()
-	rctx = context.WithValue(rctx, ctx.UrlRewriteTarget, u)
-	SetContext(r, rctx)
+	if service == "" {
+		if mcpFallback {
+			logger.Debugf("[+] Falling back on MCP services")
+			response, err := processQueryWithMCP(nlq)
+			if err != nil {
+				logger.Errorf("[+] Failed to process query: %s, err=%s", nlq, err)
+				http.Error(rw, INTERNAL_ERROR_MSG, http.StatusInternalServerError)
+				return
+			}
+			if response == "" {
+				logger.Errorf("[+] Failed to find a service for query: %s", nlq)
+				http.Error(rw, NO_SERVICE_FOUND, http.StatusNotFound)
+				return
+			}
+			rw.WriteHeader(http.StatusOK)
+			_, _ = rw.Write([]byte(response))
+			return
+		} else {
+			logger.Errorf("[+] Failed to find a service for query: %s", nlq)
+			http.Error(rw, NO_SERVICE_FOUND, http.StatusNotFound)
+			return
+		}
+	} else {
+		logger.Debugf("[+] Found a service (%v) for query=%v", service, nlq)
+
+		u, err := url.Parse(service)
+		if err != nil {
+			logger.Errorf("[+] Error while parsing the service URL (%v): %s", service, err)
+			http.Error(rw, INTERNAL_ERROR_MSG, http.StatusInternalServerError)
+			return
+		}
+		logger.Debugf("[+] redirect query to: %v ", u)
+
+		session := &user.SessionState{
+			MetaData: map[string]any{
+				METADATA_NLQ:           string(nlq),
+				METADATA_RESPONSE_TYPE: RESPONSE_TYPE_NL,
+			},
+		}
+
+		ctx.SetSession(r, session, true)
+		rctx := r.Context()
+		rctx = context.WithValue(rctx, ctx.UrlRewriteTarget, u)
+		SetContext(r, rctx)
+	}
 }
 
 func initServicePluginApiConfig() error {
@@ -133,44 +166,42 @@ func initServicePluginApiConfig() error {
 }
 
 func findServiceFromQuery(query string) (string, error) {
-	logger.Debugf("[+] Process query=%v <--", query)
-
 	if servicePluginData.ModelEmbedder == nil {
 		var err error
 		servicePluginData.ModelPath = filepath.Join(DEFAULT_MODEL_EMBEDDINGS_PATH, DEFAULT_MODEL_EMBEDDINGS_MODEL)
 		servicePluginData.ModelEmbedder, err = search.NewVectorizer(servicePluginData.ModelPath, 1)
 		if err != nil {
-			return "", fmt.Errorf("[+] Unable to find embedding model %s: %s", servicePluginData.ModelPath, err)
+			return "", fmt.Errorf("unable to find embedding model %s: %s", servicePluginData.ModelPath, err)
 		}
 		servicePluginData.ModelIndex = search.NewIndex[string]()
 		for _, service := range servicePluginData.PluginServices {
 			for _, utterance := range service.Utterances {
 				embedding, err := servicePluginData.ModelEmbedder.EmbedText(utterance)
 				if err != nil {
-					return "", fmt.Errorf("[+] embedding model %s failed for text \"%s\": %s", servicePluginData.ModelPath, utterance, err)
+					return "", fmt.Errorf("embedding model %s failed for text '%s': %s", servicePluginData.ModelPath, utterance, err)
 				}
 				servicePluginData.ModelIndex.Add(embedding, service.Target)
 			}
 		}
 	}
 	if servicePluginData.ModelEmbedder == nil || servicePluginData.ModelIndex == nil {
-		return "", fmt.Errorf("[+] ModelEmbedder or ModelIndex is nil")
+		return "", fmt.Errorf("ModelEmbedder or ModelIndex is nil")
 	}
 
 	embedding, err := servicePluginData.ModelEmbedder.EmbedText(query)
 	if err != nil {
-		return "", fmt.Errorf("[+] embedding model %s failed for query \"%s\": %s", servicePluginData.ModelPath, query, err)
+		return "", fmt.Errorf("embedding model %s failed for query '%s': %s", servicePluginData.ModelPath, query, err)
 	}
 	results := servicePluginData.ModelIndex.Search(embedding, NBRESULT)
 	if len(results) == 0 {
-		return "", fmt.Errorf("[+] No service found for query \"%s\": %s", query, err)
+		return "", nil
 	} else if NBRESULT > 1 {
 		for index, result := range results {
-			logger.Debugf("Result %d: %v / %v\n", index, result.Value, result.Relevance)
+			logger.Debugf("Result %d: %s / %f", index, result.Value, result.Relevance)
 		}
 	}
 	if results[0].Relevance < DEFAULT_THRESHOLD {
-		return "", fmt.Errorf("[+] No valid service found for query \"%s\": %s", query, err)
+		return "", nil
 	}
 
 	return results[0].Value, nil
