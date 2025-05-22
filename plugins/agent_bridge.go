@@ -5,6 +5,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -47,7 +48,6 @@ var logger = log.Get()
 
 func APIBridgeAgent(rw http.ResponseWriter, r *http.Request) {
 	logger.Debugf("[+] Entering main entry point APIBridgeAgent")
-	// POST /api-bridge-agent/listen_path_ap1 -H 'HEADER_X_NL_CONFIG: Anything'
 
 	router := mux.NewRouter()
 
@@ -55,6 +55,7 @@ func APIBridgeAgent(rw http.ResponseWriter, r *http.Request) {
 	router.HandleFunc("/api-bridge-agent/mcp", processSelectMCPOnly).Methods(http.MethodPost).Headers("Content-Type", CONTENT_TYPE_NLQ)
 	router.HandleFunc("/api-bridge-agent/openapis", processSelectAPIOnly).Methods(http.MethodPost).Headers("Content-Type", CONTENT_TYPE_NLQ)
 	router.HandleFunc("/api-bridge-agent/nlq", processSelectAPIOrMCP).Methods(http.MethodPost).Headers("Content-Type", CONTENT_TYPE_NLQ)
+	router.HandleFunc("/api-bridge-agent/info", processInfo).Methods(http.MethodGet)
 
 	// Catchall to real APIs
 	router.PathPrefix("/").HandlerFunc(processPluginConfig).Methods(http.MethodDelete, http.MethodPut).Headers(HEADER_X_NL_CONFIG, "")
@@ -218,6 +219,40 @@ func RewriteQueryToOas(rw http.ResponseWriter, r *http.Request) {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
+
+func processInfo(rw http.ResponseWriter, r *http.Request) {
+	type Info struct {
+		Version         string   `json:"version"`
+		MCPServers      []string `json:"mcp_servers"`
+		OpenAPIServices []string `json:"openapi_services"`
+	}
+
+	info := Info{
+		Version:         "1.0.0",
+		MCPServers:      []string{},
+		OpenAPIServices: []string{},
+	}
+
+	for mcpServerName := range mcpConfig {
+		name := mcpServerName
+		info.MCPServers = append(info.MCPServers, name)
+	}
+
+	for service := range servicePluginData.PluginServices {
+		serviceName := service
+		info.OpenAPIServices = append(info.OpenAPIServices, serviceName)
+	}
+
+	response, err := json.Marshal(info)
+	if err != nil {
+		logger.Errorf("[+] Error retrieving info about API Bridge Agent: %s", err)
+		http.Error(rw, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	rw.WriteHeader(http.StatusOK)
+	_, _ = rw.Write(response)
 }
 
 func RewriteResponseToNl(rw http.ResponseWriter, res *http.Response, req *http.Request) {

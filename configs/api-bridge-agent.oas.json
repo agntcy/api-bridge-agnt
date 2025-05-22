@@ -54,6 +54,17 @@
     }
   ],
   "paths": {
+    "/info": {
+      "get": {
+        "summary": "API Bridge Agent Information",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {}
+          }
+        }
+      }
+    },
     "/nlq": {
       "post": {
         "summary": "Ask a natural language query question. Will use OpenAPI services or MCP servers",
