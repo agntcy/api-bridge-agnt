@@ -76,7 +76,7 @@ func mcpInit(rw http.ResponseWriter, r *http.Request) {
 	_, _ = rw.Write([]byte("MCP Server(s) Initialized"))
 }
 
-func processMCP(rw http.ResponseWriter, r *http.Request) {
+func processSelectMCPOnly(rw http.ResponseWriter, r *http.Request) {
 	logger.Debugf("[+] Inside ProcessMCPQuery ...")
 
 	// POST and Content-Type: application/nlq are expected
@@ -250,7 +250,6 @@ func processQueryWithMCP(nlq string) (string, error) {
 				ToolCallID: functionToolCall.ID,
 			})
 		}
-
 	}
 
 	// We reached the limit of rounds

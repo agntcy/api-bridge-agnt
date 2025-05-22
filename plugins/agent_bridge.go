@@ -52,11 +52,12 @@ func APIBridgeAgent(rw http.ResponseWriter, r *http.Request) {
 	router := mux.NewRouter()
 
 	router.HandleFunc("/api-bridge-agent/mcp/init", mcpInit).Methods(http.MethodPost)
-	router.HandleFunc("/api-bridge-agent/mcp", processMCP).Methods(http.MethodPost).Headers("Content-Type", CONTENT_TYPE_NLQ)
-	router.HandleFunc("/api-bridge-agent/aba", processSelectAPI).Methods(http.MethodPost).Headers("Content-Type", CONTENT_TYPE_NLQ)
+	router.HandleFunc("/api-bridge-agent/mcp", processSelectMCPOnly).Methods(http.MethodPost).Headers("Content-Type", CONTENT_TYPE_NLQ)
+	router.HandleFunc("/api-bridge-agent/aba", processSelectAPIOnly).Methods(http.MethodPost).Headers("Content-Type", CONTENT_TYPE_NLQ)
+	router.HandleFunc("/api-bridge-agent/", processSelectAPIOrMCP).Methods(http.MethodPost).Headers("Content-Type", CONTENT_TYPE_NLQ)
 
 	// Catchall to real APIs
-	router.PathPrefix("/").HandlerFunc(processPluginConfig).Methods(http.MethodDelete, http.MethodPut).Headers("HEADER_X_NL_CONFIG", "")
+	router.PathPrefix("/").HandlerFunc(processPluginConfig).Methods(http.MethodDelete, http.MethodPut).Headers(HEADER_X_NL_CONFIG, "")
 	router.PathPrefix("/").HandlerFunc(selectAndRewrite).Methods(http.MethodPost).Headers("Content-Type", CONTENT_TYPE_NLQ)
 
 	var match mux.RouteMatch
@@ -147,7 +148,7 @@ func selectAndRewrite(rw http.ResponseWriter, r *http.Request) {
 		http.Error(rw, "No matching operation found", http.StatusNotFound)
 		return
 	}
-	logger.Debugf("[+] Selected endpoint: %#v - %#v", *matchingOperation, matchingScore)
+	logger.Debugf("[+] Selected endpoint: %s - %f", *matchingOperation, matchingScore)
 
 	apidef := getOASDefinition(r)
 	if apidef == nil {
