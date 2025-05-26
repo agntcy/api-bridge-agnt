@@ -5,7 +5,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -221,39 +220,6 @@ func RewriteQueryToOas(rw http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func processInfo(rw http.ResponseWriter, r *http.Request) {
-	type Info struct {
-		Version         string   `json:"version"`
-		MCPServers      []string `json:"mcp_servers"`
-		OpenAPIServices []string `json:"openapi_services"`
-	}
-
-	info := Info{
-		Version:         "1.0.0",
-		MCPServers:      []string{},
-		OpenAPIServices: []string{},
-	}
-
-	for mcpServerName := range mcpConfig {
-		name := mcpServerName
-		info.MCPServers = append(info.MCPServers, name)
-	}
-
-	for service := range servicePluginData.PluginServices {
-		serviceName := service
-		info.OpenAPIServices = append(info.OpenAPIServices, serviceName)
-	}
-
-	response, err := json.Marshal(info)
-	if err != nil {
-		logger.Errorf("[+] Error retrieving info about API Bridge Agent: %s", err)
-		http.Error(rw, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	rw.WriteHeader(http.StatusOK)
-	_, _ = rw.Write(response)
-}
 
 func RewriteResponseToNl(rw http.ResponseWriter, res *http.Response, req *http.Request) {
 	_, err := getPluginFromRequest(req)
