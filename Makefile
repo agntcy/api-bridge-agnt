@@ -120,13 +120,6 @@ bundle: plugins/$(FULL_PLUGIN_NAME).so
 test_plugin:
 	curl -vv http://localhost:8080/httpbin_tyk/json -H "X-Nl-Query-Enabled: yes" -H "X-Nl-Response-Type: nl" -H "Content-Type: text/plain" -d "Hello"
 
-load_plugin_select: configs/httpbin.org.api-selection.json tyk-release-$(TYK_VERSION)/middleware/agent-bridge-plugin.so
-	curl http://localhost:8080/tyk/apis/oas --header "x-tyk-authorization: foo" --header 'Content-Type: text/plain' -d@configs/httpbin.org.api-selection.json && sleep 3
-	curl http://localhost:8080/tyk/reload/group --header "x-tyk-authorization: foo"
-
-test_plugin_select: configs/httpbin.org.api-selection.json tyk-release-$(TYK_VERSION)/middleware/agent-bridge-plugin.so
-	curl -vv 'http://localhost:8080/httpbin_select/?query=I%20would%20like%20an%20XML%20response.' --header 'Content-Type: text/plain'
-
 download_models_for_semrouter:
 ifeq (,$(wildcard ./tyk-release-$(TYK_VERSION)/models/jina-embeddings-v2-base-en-q5_k_m.gguf))
 	mkdir -p "tyk-release-$(TYK_VERSION)/models"

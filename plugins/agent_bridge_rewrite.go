@@ -191,7 +191,7 @@ func trimAndLower(s string) string {
 }
 
 func isEnabled(s string) bool {
-	var ENABLED_VALUES = []string{"true", "yes", "1", "ok"}
+	ENABLED_VALUES := []string{"true", "yes", "1", "ok"}
 	return slices.Contains(ENABLED_VALUES, strings.ToLower(s))
 }
 
@@ -387,8 +387,8 @@ func llmCall(ctx context.Context, systemPrompt string, data string, schemaRespon
 			},
 		},
 		MaxTokens:      to.Ptr(int32(2048)),
-		Temperature:    to.Ptr(float32(0.0)),
-		Seed:           to.Ptr(int64(42)),
+		Temperature:    to.Ptr(float32(DEFAULT_LLM_TEMPERATURE)),
+		Seed:           to.Ptr(int64(DEFAULT_LLM_SEED)),
 		DeploymentName: &llmConfig.AzureConfig.ModelDeployment,
 	}
 
