@@ -1,6 +1,6 @@
 # API Bridge Agnt
 
-- [Documentation](https://docs.agntcy.org/pages/syntactic_sdk/api_bridge_agent.html)
+- [Documentation](https://docs.agntcy.org/syntactic/api_bridge_agent/)
 
 ## About The Project
 
